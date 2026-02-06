@@ -22,6 +22,7 @@ let activeSearchTab = "history";
 let selectionMode = false;
 let selectedIds = new Set();
 let checkinHistory = [];
+let html5QrCode = null;
 
 let elements = {};
 
@@ -91,7 +92,12 @@ function selectElements() {
     searchTabWeb: document.getElementById('search-tab-web'),
     triggerAiSearch: document.getElementById('trigger-ai-search'),
     aiSearchPrompt: document.getElementById('ai-search-prompt'),
-    confirmTitle: document.getElementById('confirm-title')
+    confirmTitle: document.getElementById('confirm-title'),
+    barcodeBtn: document.getElementById('barcode-btn'),
+    barcodeModal: document.getElementById('barcode-modal'),
+    closeBarcodeModal: document.getElementById('close-barcode-modal'),
+    manualBarcodeInput: document.getElementById('manual-barcode-input'),
+    manualBarcodeSubmit: document.getElementById('manual-barcode-submit')
   };
 }
 
@@ -128,6 +134,10 @@ function setupEventListeners() {
   if (elements.textLog) elements.textLog.onkeypress = (e) => { if (e.key === 'Enter') handleLog('text'); };
   if (elements.voiceBtn) elements.voiceBtn.onclick = startVoiceRecognition;
   if (elements.photoBtn) elements.photoBtn.onclick = () => document.getElementById('photo-modal').style.display = 'flex';
+  if (elements.barcodeBtn) elements.barcodeBtn.onclick = startBarcodeScanner;
+  if (elements.closeBarcodeModal) elements.closeBarcodeModal.onclick = stopBarcodeScanner;
+  if (elements.manualBarcodeSubmit) elements.manualBarcodeSubmit.onclick = () => handleBarcodeLog(elements.manualBarcodeInput.value.trim());
+  if (elements.manualBarcodeInput) elements.manualBarcodeInput.onkeypress = (e) => { if (e.key === 'Enter') handleBarcodeLog(elements.manualBarcodeInput.value.trim()); };
   
   const closePhotoModal = document.getElementById('close-photo-modal');
   if (closePhotoModal) closePhotoModal.onclick = () => document.getElementById('photo-modal').style.display = 'none';
@@ -534,6 +544,46 @@ function updateDashboard() {
 function showLoading(s) { if (elements.loadingOverlay) elements.loadingOverlay.style.display = s ? 'flex' : 'none'; }
 function toBase64(f) { return new Promise((s, r) => { const rdr = new FileReader(); rdr.readAsDataURL(f); rdr.onload = () => s(rdr.result.split(',')[1]); rdr.onerror = e => r(e); }); }
 function startVoiceRecognition() { const SR = window.SpeechRecognition || window.webkitSpeechRecognition; if (!SR) return alert("No support"); const r = new SR(); r.onresult = (e) => { elements.textLog.value = e.results[0][0].transcript; handleLog('text'); }; r.start(); }
+
+
+async function startBarcodeScanner() {
+  elements.barcodeModal.style.display = 'flex';
+  html5QrCode = new Html5Qrcode("barcode-reader");
+  const config = { fps: 10, qrbox: { width: 250, height: 150 } };
+  
+  try {
+    await html5QrCode.start(
+      { facingMode: "environment" }, 
+      config, 
+      (decodedText) => {
+        console.log("Barcode Scanned:", decodedText);
+        handleBarcodeLog(decodedText);
+      }
+    );
+  } catch (err) {
+    console.error("Scanner Error:", err);
+    alert("Camera access failed. Use manual entry.");
+  }
+}
+
+async function stopBarcodeScanner() {
+  elements.barcodeModal.style.display = 'none';
+  if (html5QrCode) {
+    try {
+      await html5QrCode.stop();
+      html5QrCode = null;
+    } catch (err) {
+      console.error(err);
+    }
+  }
+}
+
+async function handleBarcodeLog(code) {
+  if (!code) return;
+  await stopBarcodeScanner();
+  handleLog('text', code); // Reuse handleLog's UPC logic
+}
+
 
 init();
 

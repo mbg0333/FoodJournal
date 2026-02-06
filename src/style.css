@@ -308,3 +308,25 @@ svg {
   text-transform: uppercase;
   margin-left: 8px;
 }
+
+/* Barcode Scanner */
+#barcode-reader {
+  background: black !important;
+  min-height: 250px;
+}
+
+#barcode-reader video {
+  width: 100% !important;
+  height: auto !important;
+  object-fit: cover !important;
+}
+
+#barcode-reader img {
+  display: none !important;
+}
+
+.manual-input input {
+  font-family: monospace;
+  letter-spacing: 2px;
+  font-size: 1.1rem;
+}
