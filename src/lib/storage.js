@@ -18,7 +18,8 @@ const COLLECTIONS = {
   MEALS: 'meals',
   SHOPPING: 'shopping',
   WATER: 'water',
-  FAVORITES: 'favorites'
+  FAVORITES: 'favorites',
+  CHECKINS: 'checkins'
 };
 
 export const storage = {
@@ -121,6 +122,35 @@ export const storage = {
     });
   },
 
+  // Weight Check-ins
+  getCheckins: async () => {
+    const user = auth.currentUser;
+    if (!user) return [];
+    const q = query(
+      collection(db, COLLECTIONS.CHECKINS),
+      where('userId', '==', user.uid),
+      orderBy('timestamp', 'desc')
+    );
+    const snap = await getDocs(q);
+    return snap.docs.map(d => ({ ...d.data(), id: d.id }));
+  },
+
+  addCheckin: async (checkin) => {
+    const user = auth.currentUser;
+    if (!user) return;
+    await addDoc(collection(db, COLLECTIONS.CHECKINS), {
+      ...checkin,
+      userId: user.uid,
+      timestamp: checkin.timestamp || new Date().toISOString()
+    });
+  },
+
+  deleteCheckin: async (id) => {
+    const user = auth.currentUser;
+    if (!user) return;
+    await deleteDoc(doc(db, COLLECTIONS.CHECKINS, id));
+  },
+
   getShoppingList: async () => {
     const user = auth.currentUser;
     if (!user) return [];
@@ -131,16 +161,5 @@ export const storage = {
     );
     const snap = await getDocs(q);
     return snap.docs.map(d => ({ ...d.data(), id: d.id }));
-  },
-
-  addShoppingItem: async (item) => {
-    const user = auth.currentUser;
-    if (!user) return;
-    await addDoc(collection(db, COLLECTIONS.SHOPPING), {
-      ...item,
-      userId: user.uid,
-      timestamp: new Date().toISOString(),
-      done: false
-    });
   }
 };

@@ -4,9 +4,10 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AI Food Journal v2.8</title>
+    <title>AI Food Journal v2.9</title>
     <link rel="stylesheet" href="/src/style.css" />
-    <script src="https://unpkg.com/lucide@0.321.0/dist/umd/lucide.min.js"></script>
+    <!-- Use a more reliable CDN for Lucide -->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
     <style>
       @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap');
     </style>
@@ -118,6 +119,19 @@
             <div class="stat-item"><span id="goal-weight" class="stat-value">--</span><span class="stat-label">Goal</span></div>
           </div>
         </div>
+
+        <!-- Weekly Check-in Section -->
+        <div class="glass" style="padding: 24px; margin-top: 20px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h3 style="font-size: 1.1rem;">Weekly Check-in</h3>
+            <button id="add-checkin-btn" class="primary" style="padding: 8px 16px; font-size: 0.85rem;">Log Weight</button>
+          </div>
+          <p style="color: var(--text-dim); font-size: 0.85rem; margin-bottom: 16px;">Record your progress every Sunday.</p>
+          <div id="checkin-history" class="checkin-list">
+            <!-- Weekly items will appear here -->
+            <p style="text-align: center; color: var(--text-dim); padding: 20px;">No check-ins yet.</p>
+          </div>
+        </div>
       </div>
 
       <!-- TAB 3: FAVORITES -->
@@ -180,6 +194,7 @@
         </div>
       </div>
 
+      <!-- Settings Modal -->
       <div id="settings-modal" class="modal-overlay">
         <div class="modal-content glass">
           <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
@@ -187,7 +202,8 @@
           </div>
           <div class="input-group"><label>Gemini API Key</label><input type="password" id="api-key" /></div>
           <div class="input-group"><label>Daily Calorie Goal</label><input type="number" id="cal-goal-input" /></div>
-          <div class="input-group"><label>Current Weight (lbs)</label><input type="number" id="current-weight-input" /></div>
+          <div class="input-group"><label>Target Weight (lbs)</label><input type="number" id="goal-weight-input" /></div>
+          <div class="input-group"><label>Starting Weight (lbs)</label><input type="number" id="start-weight-input" /></div>
           <button id="save-settings" class="primary" style="width:100%;">Save Changes</button>
         </div>
       </div>
@@ -197,10 +213,26 @@
       </div>
     </div>
 
+    <!-- Photo Modal Choice -->
+    <div id="photo-modal" class="modal-overlay">
+      <div class="modal-content glass" style="max-width: 320px;">
+        <h3 style="margin-bottom: 20px; text-align: center;">Choose Source</h3>
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <button id="take-photo-btn" class="primary">Take Photo</button>
+          <button id="choose-photo-btn" class="glass">From Gallery</button>
+          <button id="close-photo-modal" style="background:none; margin-top: 10px; color: var(--text-dim);">Cancel</button>
+        </div>
+      </div>
+    </div>
+
     <!-- HIDDEN INPUTS -->
     <input type="file" id="file-input" accept="image/*" style="display: none;" />
     <input type="file" id="camera-input" accept="image/*" capture="environment" style="display: none;" />
 
-    <script type="module" src="/src/main.js?v=2.8"></script>
+    <script type="module" src="/src/main.js?v=2.9"></script>
+    <script>
+      // Force immediate execution if script is ready
+      setTimeout(() => { if (window.lucide) window.lucide.createIcons(); }, 100);
+    </script>
   </body>
 </html>
