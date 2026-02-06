@@ -4,13 +4,13 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="./vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AI Food Journal v2.1</title>
+    <title>AI Food Journal v2.2</title>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
       @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap');
     </style>
-    <script type="module" crossorigin src="./assets/index-nelYLGve.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-BYznEI0A.css">
+    <script type="module" crossorigin src="./assets/index-Bxffd1vz.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-DZZrLIKj.css">
   </head>
   <body>
     <div id="auth-screen" class="modal-overlay" style="display: flex; z-index: 10000;">
@@ -95,6 +95,56 @@
           <span>Progress</span>
         </a>
       </nav>
+
+      <!-- Confirmation Modal -->
+      <div id="confirm-modal" class="modal-overlay">
+        <div class="modal-content glass">
+          <div class="modal-header" style="margin-bottom: 20px;">
+            <h3 id="confirm-title">Confirm Entry</h3>
+          </div>
+          <div class="macro-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+            <div class="input-group">
+              <label>Calories</label>
+              <input type="number" id="confirm-calories" readonly />
+            </div>
+            <div class="input-group">
+              <label>Protein (g)</label>
+              <input type="number" id="confirm-protein" readonly />
+            </div>
+            <div class="input-group">
+              <label>Carbs (g)</label>
+              <input type="number" id="confirm-carbs" readonly />
+            </div>
+            <div class="input-group">
+              <label>Fat (g)</label>
+              <input type="number" id="confirm-fat" readonly />
+            </div>
+          </div>
+          
+          <div class="input-group" style="margin-bottom: 15px;">
+            <label>Serving Size (Multiplier)</label>
+            <div style="display: flex; gap: 10px; align-items: center;">
+              <input type="range" id="serving-slider" min="0.5" max="3" step="0.25" value="1" style="flex: 1;" />
+              <span id="serving-label" style="font-weight: 600; min-width: 40px;">1x</span>
+            </div>
+          </div>
+
+          <div class="input-group" style="margin-bottom: 20px;">
+            <label>Category</label>
+            <select id="confirm-category" class="glass" style="width: 100%; padding: 10px; color: white; border: 1px solid rgba(255,255,255,0.1);">
+              <option value="Breakfast">Breakfast</option>
+              <option value="Lunch">Lunch</option>
+              <option value="Dinner">Dinner</option>
+              <option value="Snack">Snack</option>
+            </select>
+          </div>
+
+          <div style="display: flex; gap: 10px;">
+            <button id="cancel-confirm" class="glass" style="flex: 1;">Cancel</button>
+            <button id="save-confirm" class="primary" style="flex: 1;">Add to Journal</button>
+          </div>
+        </div>
+      </div>
 
       <div id="settings-modal" class="modal-overlay">
         <div class="modal-content glass">
