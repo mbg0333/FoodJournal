@@ -143,7 +143,13 @@ async function loadUserData() {
       currentWeight: settings.currentWeight || 0
     };
     
-    console.log("Gemini Key Status:", currentSettings.geminiKey ? "Loaded ✅" : "Missing ❌");
+    const key = currentSettings.geminiKey || "";
+    console.log("--- GEMINI KEY CHECK ---");
+    console.log("Status:", key ? "Loaded ✅" : "Missing ❌");
+    console.log("Key starts with:", key.substring(0, 7));
+    console.log("Key ends with:", key.substring(key.length - 4));
+    console.log("TIP: Should start with AIzaSyB and end with v8Hg");
+    console.log("-----------------------");
     
     await updateDashboard();
     await renderMeals();
@@ -187,7 +193,7 @@ async function handleLog(type, data = null) {
       elements.textLog.value = '';
       await renderMeals();
     } else {
-      alert('AI analysis failed. Check your API key or connection.');
+      alert('AI analysis failed. Check your API key in Settings.');
     }
   } catch (e) {
     console.error(e);
