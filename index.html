@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang='en'>
+  <head>
+    <meta charset='UTF-8' />
+    <link rel='icon' type='image/svg+xml' href='/vite.svg' />
+    <meta name='viewport' content='width=device-width, initial-scale=1.0' />
+    <title>AI Food Journal</title>
+    <link rel='stylesheet' href='/src/style.css' />
+    <script src='https://unpkg.com/lucide@latest'></script>
+    <style>
+      /* Ensure fonts load correctly */
+      @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap');
+    </style>
+  </head>
+  <body>
+    <div id='auth-screen' class='modal-overlay' style='display: flex; z-index: 10000;'>
+      <div class='modal-content glass' style='text-align: center;'>
+        <h1 class='gradient-text' style='font-size: 2.5rem;'>Food Journal</h1>
+        <p style='margin: 20px 0; color: var(--text-dim);'>Smart AI driven nutrition tracking, synced across all your devices.</p>
+        <button class='primary' id='login-btn' style='width: 100%; margin-top: 10px;'>Login with Google</button>
+      </div>
+    </div>
+
+    <div id='app' style='display: none;'>
+      <header class='header'>
+        <h1 class='gradient-text'>Food Journal</h1>
+        <div style='display: flex; gap: 10px;'>
+          <button id='settings-btn' class='icon glass'>
+            <i data-lucide='settings'></i>
+          </button>
+          <button id='logout-btn' class='icon glass' title='Logout'>
+            <i data-lucide='log-out'></i>
+          </button>
+        </div>
+      </header>
+
+      <div id='journal-view'>
+        <div id='dashboard' class='dashboard-card glass'>
+          <h3>Goal Tracker</h3>
+          <div class='progress-container'>
+            <div id='goal-progress' class='progress-bar'></div>
+          </div>
+          <div class='stats-grid'>
+            <div class='stat-item'>
+              <span id='current-weight' class='stat-value'>--</span>
+              <span class='stat-label'>Current</span>
+            </div>
+            <div class='stat-item'>
+              <span id='goal-weight' class='stat-value'>--</span>
+              <span class='stat-label'>Goal</span>
+            </div>
+          </div>
+        </div>
+
+        <div class='quick-actions' id='quick-actions'></div>
+
+        <div id='log-container' class='glass' style='padding: 20px; margin-bottom: 20px;'>
+          <h4 style='margin-bottom: 16px;'>Log New Entry</h4>
+          <div style='display: flex; gap: 10px; margin-bottom: 20px;'>
+            <button id='voice-btn' class='icon glass' title='Voice Log'><i data-lucide='mic'></i></button>
+            <button id='photo-btn' class='icon glass' title='Photo Log'><i data-lucide='camera'></i></button>
+            <input type='file' id='file-input' accept='image/*' style='display: none;' />
+            <input type='text' id='text-log' placeholder='What did you eat?' />
+            <button id='log-btn' class='primary'>Log</button>
+          </div>
+          <div id='voice-status' style='display: none; color: var(--primary); margin-bottom: 10px;'>Listening...</div>
+        </div>
+
+        <div class='meal-list' id='meal-list'></div>
+      </div>
+
+      <div id='shopping-view' style='display: none;'>
+        <h3>Shopping List</h3>
+        <div id='shopping-list' class='meal-list'></div>
+      </div>
+
+      <div id='stats-view' style='display: none;'>
+        <h3>Progress History</h3>
+        <div class='glass' style='padding: 20px; margin-top: 20px;'>
+          <p>Coming soon...</p>
+        </div>
+      </div>
+
+      <nav class='bottom-nav'>
+        <a href='#' class='nav-item active' data-tab='journal'>
+          <i data-lucide='book-open'></i>
+          <span>Journal</span>
+        </a>
+        <a href='#' class='nav-item' data-tab='shopping'>
+          <i data-lucide='shopping-bag'></i>
+          <span>Shopping</span>
+        </a>
+        <a href='#' class='nav-item' data-tab='stats'>
+          <i data-lucide='bar-chart-2'></i>
+          <span>Progress</span>
+        </a>
+      </nav>
+
+      <div id='settings-modal' class='modal-overlay'>
+        <div class='modal-content glass'>
+          <div class='modal-header' style='display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;'>
+            <h3>Settings</h3>
+            <button id='close-settings' class='icon' style='background:none;'><i data-lucide='x'></i></button>
+          </div>
+          <div class='input-group'>
+            <label>Gemini API Key</label>
+            <input type='password' id='api-key' />
+          </div>
+          <div class='input-group'>
+            <label>Goal Weight (kg)</label>
+            <input type='number' id='goal-weight-input' />
+          </div>
+          <div class='input-group'>
+            <label>Current Weight (kg)</label>
+            <input type='number' id='current-weight-input' />
+          </div>
+          <button id='save-settings' class='primary' style='width:100%;'>Save Changes</button>
+        </div>
+      </div>
+
+      <div id='loading-overlay' class='modal-overlay'>
+        <div class='loading-wave'>
+          <div class='wave-dot'></div>
+          <div class='wave-dot'></div>
+          <div class='wave-dot'></div>
+        </div>
+      </div>
+    </div>
+
+    <script type='module' src='/src/main.js'></script>
+  </body>
+</html>
