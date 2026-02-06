@@ -372,6 +372,13 @@ window.quickLog = (id) => {
 async function loadUserData() {
   const s = await storage.getSettings();
   if (s.calGoal) currentSettings = { ...currentSettings, ...s };
+  // Force sync .env key to localStorage if necessary
+  const envKey = import.meta.env.VITE_GEMINI_API_KEY;
+  if (envKey && (!currentSettings.geminiKey || currentSettings.geminiKey.length < 10)) {
+    console.log("AI: Syncing new API key from environment...");
+    currentSettings.geminiKey = envKey;
+    storage.saveSettings(currentSettings);
+  }
   currentFavorites = await storage.getFavorites();
   allMeals = await storage.getMeals();
   checkinHistory = await storage.getCheckins();
@@ -494,6 +501,7 @@ function toBase64(f) { return new Promise((s, r) => { const rdr = new FileReader
 function startVoiceRecognition() { const SR = window.SpeechRecognition || window.webkitSpeechRecognition; if (!SR) return alert("No support"); const r = new SR(); r.onresult = (e) => { elements.textLog.value = e.results[0][0].transcript; handleLog('text'); }; r.start(); }
 
 init();
+
 
 
 
