@@ -4,15 +4,16 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="./vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AI Food Journal v2.7</title>
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <title>AI Food Journal v2.8</title>
+    <script src="https://unpkg.com/lucide@0.321.0/dist/umd/lucide.min.js"></script>
     <style>
       @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap');
     </style>
-    <script type="module" crossorigin src="./assets/index-DsfYRBzh.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-CIE_NUEY.css">
+    <script type="module" crossorigin src="./assets/index-DvckGIz3.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-CQc0l-Kn.css">
   </head>
   <body>
+    <!-- Auth Screen -->
     <div id="auth-screen" class="modal-overlay" style="display: flex; z-index: 10000;">
       <div class="modal-content glass" style="text-align: center;">
         <h1 class="gradient-text" style="font-size: 2.5rem;">Food Journal</h1>
@@ -24,18 +25,15 @@
     <div id="app" style="display: none;">
       <header class="header">
         <h1 class="gradient-text">Food Journal</h1>
-        <div style="display: flex; gap: 10px;">
-          <button id="settings-btn" class="icon glass">
-            <i data-lucide="settings"></i>
-          </button>
-          <button id="logout-btn" class="icon glass" title="Logout">
-            <i data-lucide="log-out"></i>
-          </button>
+        <div style="display: flex; gap: 8px;">
+          <button id="search-btn" class="icon glass"><i data-lucide="search"></i></button>
+          <button id="settings-btn" class="icon glass"><i data-lucide="settings"></i></button>
+          <button id="logout-btn" class="icon glass"><i data-lucide="log-out"></i></button>
         </div>
       </header>
 
       <!-- TAB 1: JOURNAL -->
-      <div id="journal-view">
+      <div id="journal-view" class="view">
         <div class="date-nav glass">
           <button id="prev-day" class="icon-sm glass"><i data-lucide="chevron-left"></i></button>
           <div style="flex: 1; text-align: center; position: relative;">
@@ -68,162 +66,117 @@
               <span id="current-water">0</span> / <span id="goal-water">0</span> oz
             </div>
           </div>
-          <div class="water-progress-outer">
-            <div id="water-progress-bar" class="water-progress-inner"></div>
-          </div>
+          <div class="water-progress-outer"><div id="water-progress-bar" class="water-progress-inner"></div></div>
           <div style="display: flex; gap: 8px; margin-top: 12px;">
-            <button class="water-btn primary-alt" data-amt="8">+ 8oz</button>
-            <button class="water-btn primary-alt" data-amt="16">+ 16oz</button>
-            <button class="water-btn primary-alt" data-amt="32">+ 32oz</button>
+            <button class="water-btn primary-alt" data-amt="8">+8</button>
+            <button class="water-btn primary-alt" data-amt="16">+16</button>
+            <button class="water-btn primary-alt" data-amt="32">+32</button>
             <button id="reset-water" class="glass icon-sm" style="margin-left: auto; color: var(--text-dim);"><i data-lucide="refresh-cw"></i></button>
           </div>
         </div>
 
         <div id="log-container" class="glass" style="padding: 20px; margin-bottom: 20px;">
           <h4 style="margin-bottom: 16px;">Log Food</h4>
-          <div style="display: flex; gap: 10px; margin-bottom: 20px;">
-            <button id="voice-btn" class="icon glass" title="Voice Log"><i data-lucide="mic"></i></button>
-            <button id="photo-btn" class="icon glass" title="Photo Log"><i data-lucide="camera"></i></button>
-            <input type="file" id="file-input" accept="image/*" style="display: none;" />
-            <input type="file" id="camera-input" accept="image/*" capture="environment" style="display: none;" />
-            
-            <input type="text" id="text-log" placeholder="What did you eat?" />
+          <div style="display: flex; gap: 10px; margin-bottom: 16px; align-items: center;">
+            <input type="text" id="text-log" placeholder="What did you eat?" style="flex: 1;" />
             <button id="log-btn" class="primary">Log</button>
           </div>
-          <div id="voice-status" style="display: none; color: var(--primary); margin-bottom: 10px;">Listening...</div>
+          <div style="display: flex; gap: 10px;">
+            <button id="voice-btn" class="icon glass"><i data-lucide="mic"></i></button>
+            <button id="photo-btn" class="icon glass"><i data-lucide="camera"></i></button>
+            <button id="open-favs-log-btn" class="glass" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px;">
+              <i data-lucide="star" style="width: 16px; color: #fbbf24;"></i> FAVS
+            </button>
+          </div>
+          <div id="favs-dropdown" class="glass favs-dropdown" style="display: none;">
+            <h5 style="padding: 10px 15px; border-bottom: 1px solid var(--glass-border);">Quick Log Favorites</h5>
+            <div id="favs-dropdown-list" style="max-height: 200px; overflow-y: auto;"></div>
+          </div>
+        </div>
+
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+           <h4 style="color:var(--text-dim)">Entries</h4>
+           <button id="bulk-select-btn" class="glass" style="font-size:0.8rem; padding:5px 12px;">Select for Favorite</button>
+        </div>
+
+        <div id="bulk-actions" style="display:none; margin-bottom:12px;" class="glass">
+           <div style="padding:15px; display:flex; justify-content:space-between; align-items:center;">
+              <span id="selected-count" style="font-size:0.9rem;">0 items selected</span>
+              <button id="save-bulk-fav-btn" class="primary" style="padding:8px 16px; font-size:0.85rem;">Group as Fav</button>
+           </div>
         </div>
 
         <div id="categorized-meals" class="category-container"></div>
       </div>
 
       <!-- TAB 2: WEIGHT TRACKER -->
-      <div id="weight-view" style="display: none;">
+      <div id="weight-view" class="view" style="display: none;">
         <div class="dashboard-card glass">
           <h2 class="gradient-text">Weight Progress</h2>
-          <div class="progress-container" style="height: 20px; border-radius: 10px;">
-            <div id="goal-progress" class="progress-bar"></div>
-          </div>
+          <div class="progress-container"><div id="goal-progress" class="progress-bar"></div></div>
           <div class="stats-grid">
-            <div class="stat-item">
-              <span id="current-weight" class="stat-value" style="font-size: 2rem;">--</span>
-              <span class="stat-label">Current</span>
-            </div>
-            <div class="stat-item">
-              <span id="goal-weight" class="stat-value" style="font-size: 2rem;">--</span>
-              <span class="stat-label">Goal</span>
-            </div>
-          </div>
-          <div style="margin-top: 30px; text-align: center;">
-             <p style="color: var(--text-dim); font-size: 0.9rem;">To update your current weight, go to Settings.</p>
+            <div class="stat-item"><span id="current-weight" class="stat-value">--</span><span class="stat-label">Current</span></div>
+            <div class="stat-item"><span id="goal-weight" class="stat-value">--</span><span class="stat-label">Goal</span></div>
           </div>
         </div>
       </div>
 
-      <!-- TAB 3: SHOPPING -->
-      <div id="shopping-view" style="display: none;">
+      <!-- TAB 3: FAVORITES -->
+      <div id="favorites-view" class="view" style="display: none;">
+        <h2 class="gradient-text" style="margin-bottom: 20px;">My Favorites</h2>
+        <div id="favorites-list" class="category-container"></div>
+      </div>
+
+      <!-- TAB 4: SHOPPING -->
+      <div id="shopping-view" class="view" style="display: none;">
         <h3>Shopping List</h3>
         <div id="shopping-list" class="meal-list"></div>
       </div>
 
+      <!-- Bottom Navigation -->
       <nav class="bottom-nav">
-        <a href="#" class="nav-item active" data-tab="journal">
-          <i data-lucide="book-open"></i>
-          <span>Journal</span>
-        </a>
-        <a href="#" class="nav-item" data-tab="weight">
-          <i data-lucide="scale"></i>
-          <span>Weight</span>
-        </a>
-        <a href="#" class="nav-item" data-tab="shopping">
-          <i data-lucide="shopping-bag"></i>
-          <span>Shopping</span>
-        </a>
+        <a href="#" class="nav-item active" data-tab="journal"><i data-lucide="book-open"></i><span>Journal</span></a>
+        <a href="#" class="nav-item" data-tab="favorites"><i data-lucide="star"></i><span>Favs</span></a>
+        <a href="#" class="nav-item" data-tab="weight"><i data-lucide="scale"></i><span>Weight</span></a>
+        <a href="#" class="nav-item" data-tab="shopping"><i data-lucide="shopping-bag"></i><span>Shopping</span></a>
       </nav>
 
-      <!-- Water Adjustment Modal -->
-      <div id="water-modal" class="modal-overlay">
-        <div class="modal-content glass" style="max-width: 320px; text-align: center;">
-          <h3 style="margin-bottom: 10px;">Adjust Water</h3>
-          <p style="color: var(--text-dim); margin-bottom: 20px;">Current: <span id="modal-current-water">0</span> oz</p>
-          <div style="display: flex; justify-content: center; gap: 20px; align-items: center; margin-bottom: 24px;">
-            <button id="water-minus" class="icon glass" style="width: 60px; height: 60px; font-size: 2rem;">-</button>
-            <span style="font-size: 1.5rem; font-weight: 700; min-width: 60px;">8oz</span>
-            <button id="water-plus" class="icon glass" style="width: 60px; height: 60px; font-size: 2rem;">+</button>
+      <!-- Search Modal -->
+      <div id="search-modal" class="modal-overlay">
+        <div class="modal-content glass">
+          <div class="search-header" style="margin-bottom: 20px;">
+            <input type="text" id="global-search-input" placeholder="Search history..." />
           </div>
-          <button id="close-water-modal" class="primary" style="width: 100%;">Done</button>
-        </div>
-      </div>
-
-      <!-- Photo Selection Modal -->
-      <div id="photo-modal" class="modal-overlay">
-        <div class="modal-content glass" style="max-width: 320px;">
-          <h3 style="margin-bottom: 20px; text-align: center;">Choose Source</h3>
-          <div style="display: flex; flex-direction: column; gap: 12px;">
-            <button id="take-photo-btn" class="primary" style="display: flex; align-items: center; justify-content: center; gap: 10px;">
-              <i data-lucide="camera"></i> Take New Photo
-            </button>
-            <button id="choose-photo-btn" class="glass" style="display: flex; align-items: center; justify-content: center; gap: 10px;">
-              <i data-lucide="image"></i> Choose from Gallery
-            </button>
-            <button id="close-photo-modal" style="background:none; margin-top: 10px; color: var(--text-dim);">Cancel</button>
-          </div>
+          <div id="search-results" style="max-height: 400px; overflow-y: auto;"></div>
+          <button id="close-search" class="glass" style="width: 100%; margin-top: 15px;">Close</button>
         </div>
       </div>
 
       <!-- Confirmation / Edit Modal -->
       <div id="confirm-modal" class="modal-overlay">
         <div class="modal-content glass">
-          <div class="modal-header" style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
+          <div class="modal-header" style="margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
             <h3 id="confirm-title">Confirm Entry</h3>
-            <button id="delete-btn" class="icon-sm" style="background: rgba(239, 68, 68, 0.2); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3);">
-              <i data-lucide="trash-2"></i>
-            </button>
+            <button id="delete-btn" class="icon-sm" style="background: rgba(239, 68, 68, 0.2); color: #ef4444;"><i data-lucide="trash-2"></i></button>
           </div>
-          
-          <!-- Image Preview in Modal -->
-          <div id="confirm-img-preview" style="width: 100%; height: 160px; border-radius: 12px; background-size: cover; background-position: center; margin-bottom: 20px;"></div>
-
-          <div class="input-group" style="margin-bottom: 15px;">
-            <label>Food Name</label>
-            <input type="text" id="confirm-name" />
+          <div id="confirm-img-preview" class="image-preview"></div>
+          <div class="input-group"><label>Food Name</label><input type="text" id="confirm-name" /></div>
+          <div class="macro-grid">
+            <div class="input-group"><label>Calories</label><input type="number" id="confirm-calories" /></div>
+            <div class="input-group"><label>Protein (g)</label><input type="number" id="confirm-protein" /></div>
+            <div class="input-group"><label>Carbs (g)</label><input type="number" id="confirm-carbs" /></div>
+            <div class="input-group"><label>Fat (g)</label><input type="number" id="confirm-fat" /></div>
           </div>
-          <div class="macro-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
-            <div class="input-group">
-              <label>Calories</label>
-              <input type="number" id="confirm-calories" />
-            </div>
-            <div class="input-group">
-              <label>Protein (g)</label>
-              <input type="number" id="confirm-protein" />
-            </div>
-            <div class="input-group">
-              <label>Carbs (g)</label>
-              <input type="number" id="confirm-carbs" />
-            </div>
-            <div class="input-group">
-              <label>Fat (g)</label>
-              <input type="number" id="confirm-fat" />
-            </div>
-          </div>
-          <div class="input-group" id="serving-container" style="margin-bottom: 15px;">
-            <label>Serving Multiplier</label>
-            <div style="display: flex; gap: 10px; align-items: center;">
-              <input type="range" id="serving-slider" min="0.5" max="3" step="0.25" value="1" style="flex: 1;" />
-              <span id="serving-label" style="font-weight: 600; min-width: 40px;">1x</span>
-            </div>
-          </div>
-          <div class="input-group" style="margin-bottom: 20px;">
+          <div class="input-group">
             <label>Category</label>
             <select id="confirm-category" class="glass">
-              <option value="Breakfast">Breakfast</option>
-              <option value="Lunch">Lunch</option>
-              <option value="Dinner">Dinner</option>
-              <option value="Snack">Snack</option>
+              <option value="Breakfast">Breakfast</option><option value="Lunch">Lunch</option>
+              <option value="Dinner">Dinner</option><option value="Snack">Snack</option>
             </select>
           </div>
-          <div style="display: flex; gap: 10px;">
-            <button id="cancel-confirm" class="glass" style="flex: 1;">Cancel</button>
-            <button id="save-confirm" class="primary" style="flex: 1;">Save</button>
+          <div style="display: flex; flex-direction: column; gap: 10px;">
+            <div style="display: flex; gap: 10px;"><button id="cancel-confirm" class="glass" style="flex: 1;">Cancel</button><button id="save-confirm" class="primary" style="flex: 1;">Save</button></div>
+            <button id="save-as-fav-btn" class="glass" style="width: 100%; border-color:#fbbf24; color:#fbbf24;"><i data-lucide="star" style="width:14px; margin-right:5px; vertical-align:middle;"></i> Save to Favorites</button>
           </div>
         </div>
       </div>
@@ -231,23 +184,23 @@
       <div id="settings-modal" class="modal-overlay">
         <div class="modal-content glass">
           <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-            <h3>Settings</h3>
-            <button id="close-settings" class="icon" style="background:none;"><i data-lucide="x"></i></button>
+            <h3>Settings</h3><button id="close-settings" class="icon" style="background:none;"><i data-lucide="x"></i></button>
           </div>
           <div class="input-group"><label>Gemini API Key</label><input type="password" id="api-key" /></div>
           <div class="input-group"><label>Daily Calorie Goal</label><input type="number" id="cal-goal-input" /></div>
-          <div id="suggested-protein" style="font-size: 0.85rem; color: var(--primary); margin-bottom: 8px;">Suggested Protein: <span id="suggested-protein-val">--</span>g</div>
-          <div id="suggested-water" style="font-size: 0.85rem; color: #60a5fa; margin-bottom: 20px;">Suggested Water: <span id="suggested-water-val">--</span> oz</div>
-          <div class="input-group"><label>Starting Weight (lbs)</label><input type="number" id="start-weight-input" /></div>
-          <div class="input-group"><label>Goal Weight (lbs)</label><input type="number" id="goal-weight-input" /></div>
           <div class="input-group"><label>Current Weight (lbs)</label><input type="number" id="current-weight-input" /></div>
           <button id="save-settings" class="primary" style="width:100%;">Save Changes</button>
         </div>
       </div>
-
+      
       <div id="loading-overlay" class="modal-overlay">
         <div class="loading-wave"><div class="wave-dot"></div><div class="wave-dot"></div><div class="wave-dot"></div></div>
       </div>
     </div>
+
+    <!-- HIDDEN INPUTS -->
+    <input type="file" id="file-input" accept="image/*" style="display: none;" />
+    <input type="file" id="camera-input" accept="image/*" capture="environment" style="display: none;" />
+
   </body>
 </html>
