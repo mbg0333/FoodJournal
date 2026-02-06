@@ -1,4 +1,4 @@
-ï»¿import { auth, db } from './lib/firebase';
+import { auth, db } from './lib/firebase';
 import { 
   GoogleAuthProvider, 
   signInWithPopup, 
@@ -299,7 +299,7 @@ function openConfirmModal(m, edit) {
 async function handleSearch(q) {
   if (q.length < 2) { elements.searchResults.innerHTML = ""; return; }
   const matches = allMeals.filter(m => m.name.toLowerCase().includes(q.toLowerCase())).slice(0, 8);
-  elements.searchResults.innerHTML = matches.map(m => `<div class="search-item glass" onclick="window.quickLog('${m.id}')"><strong>${m.name}</strong> â€¢ ${m.calories} kcal</div>`).join('') || "<p style='text-align:center'>None</p>";
+  elements.searchResults.innerHTML = matches.map(m => `<div class="search-item glass" onclick="window.quickLog('${m.id}')"><strong>${m.name}</strong> • ${m.calories} kcal</div>`).join('') || "<p style='text-align:center'>None</p>";
 }
 
 window.quickLog = (id) => {
@@ -349,8 +349,8 @@ async function renderJournal() {
   if (elements.categorizedMeals) elements.categorizedMeals.innerHTML = Object.keys(grp).map(cat => `
     <div class="category-section glass ${categoriesExpanded[cat] ? '' : 'collapsed'}">
       <div class="category-header" onclick="window.toggleCat('${cat}')">
-        <h4><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="chevron"><path d="m6 9 6 6 6-6"/></svg> ${cat}</h4>
-        <span>${grp[cat].length} items â€¢ ${grp[cat].reduce((s, m) => s+m.calories, 0)} kcal</span>
+        <h4><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="chevron"><polyline points="6 9 12 15 18 9"></polyline></svg> ${cat}</h4>
+        <span>${grp[cat].length} items • ${grp[cat].reduce((s, m) => s+m.calories, 0)} kcal</span>
       </div>
       <div class="category-content">
         ${grp[cat].map(m => `
@@ -379,7 +379,7 @@ async function renderFavorites() {
     <div class="fav-item glass" style="padding:15px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
       <div><strong>${f.name}</strong><br><small>${f.calories} kcal</small></div>
       <div style="display:flex; gap:10px;"><button class="primary" onclick="window.logFav('${f.id}')">Add</button><button class="glass" onclick="window.deleteFav('${f.id}')">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
       </button></div>
     </div>`).join('') || "<p style='text-align:center; padding:20px;'>None</p>";
 }
@@ -393,7 +393,7 @@ function renderCheckins() {
     <div class="checkin-item glass" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; margin-bottom: 10px;">
       <div><strong>${c.weight} lbs</strong><br><small>${new Date(c.date + "T12:00:00").toLocaleDateString()}</small></div>
       <button class="icon-sm glass" style="color: #ef4444;" onclick="window.deleteCheckin('${c.id}')">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
       </button>
     </div>`).join('');
 }
@@ -432,3 +432,4 @@ function toBase64(f) { return new Promise((s, r) => { const rdr = new FileReader
 function startVoiceRecognition() { const SR = window.SpeechRecognition || window.webkitSpeechRecognition; if (!SR) return alert("No support"); const r = new SR(); r.onresult = (e) => { elements.textLog.value = e.results[0][0].transcript; handleLog('text'); }; r.start(); }
 
 init();
+
