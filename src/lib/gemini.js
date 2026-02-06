@@ -7,27 +7,33 @@ export const analyzeFood = async (key, input, type) => {
   }
 
   try {
+    // Explicitly using v1 to avoid v1beta issues seen in logs
     const genAI = new GoogleGenerativeAI(key.trim());
-    // Using the absolute most stable model identifier
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({ 
+      model: "gemini-1.5-flash"
+    });
 
     let prompt = "";
     let parts = [];
 
     if (type === 'photo' || type === 'text' || type === 'voice') {
       prompt = `Analyze this food input (${type}). Identify the food, calories, and category (Breakfast, Lunch, Dinner, Snack). 
-      If it's a photo, also try to identify the restaurant if a logo is present.
+      If it's a photo, also try to identify the restaurant if a logo is present (leave empty string if none).
       Return ONLY JSON format: { "name": "string", "calories": number, "category": "string", "restaurant": "string" }`;
       
       if (type === 'photo') {
-        parts = [prompt, { inlineData: { data: input, mimeType: "image/jpeg" } }];
+        parts = [
+          { text: prompt },
+          { inlineData: { data: input, mimeType: "image/jpeg" } }
+        ];
       } else {
-        parts = [`${prompt}\nInput: ${input}`];
+        parts = [{ text: `${prompt}\nInput: ${input}` }];
       }
     }
 
-    const resp = await model.generateContent(parts);
-    const text = resp.response.text();
+    const result = await model.generateContent({ contents: [{ role: "user", parts }] });
+    const text = result.response.text();
+    
     // Use a more robust JSON extractor
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (!jsonMatch) throw new Error("No JSON found in response");
