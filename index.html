@@ -4,13 +4,13 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="./vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AI Food Journal v2.6</title>
+    <title>AI Food Journal v2.7</title>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
       @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap');
     </style>
-    <script type="module" crossorigin src="./assets/index-BcerRz9m.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-BHMmCzwJ.css">
+    <script type="module" crossorigin src="./assets/index-DsfYRBzh.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-CIE_NUEY.css">
   </head>
   <body>
     <div id="auth-screen" class="modal-overlay" style="display: flex; z-index: 10000;">
@@ -37,9 +37,12 @@
       <!-- TAB 1: JOURNAL -->
       <div id="journal-view">
         <div class="date-nav glass">
-          <button id="prev-day" class="icon-sm"><i data-lucide="chevron-left"></i></button>
-          <div id="current-date-display" style="font-weight: 600; flex: 1; text-align: center;">Today</div>
-          <button id="next-day" class="icon-sm"><i data-lucide="chevron-right"></i></button>
+          <button id="prev-day" class="icon-sm glass"><i data-lucide="chevron-left"></i></button>
+          <div style="flex: 1; text-align: center; position: relative;">
+            <div id="current-date-display" style="font-weight: 600; cursor: pointer;">Today</div>
+            <input type="date" id="date-picker-hidden" style="position: absolute; opacity: 0; left: 0; top: 0; width: 100%; height: 100%; cursor: pointer;" />
+          </div>
+          <button id="next-day" class="icon-sm glass"><i data-lucide="chevron-right"></i></button>
         </div>
 
         <div class="summary-card glass">
@@ -55,13 +58,13 @@
           </div>
         </div>
 
-        <div class="water-card glass">
+        <div id="water-card" class="water-card glass">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
             <div style="display: flex; align-items: center; gap: 8px;">
-              <i data-lucide="droplets" style="color: #60a5fa;"></i>
+              <i data-lucide="droplet" style="color: #60a5fa;"></i>
               <h3 style="font-size: 1rem;">Water</h3>
             </div>
-            <div style="font-size: 0.9rem; font-weight: 600;">
+            <div style="font-size: 1rem; font-weight: 700;">
               <span id="current-water">0</span> / <span id="goal-water">0</span> oz
             </div>
           </div>
@@ -69,10 +72,10 @@
             <div id="water-progress-bar" class="water-progress-inner"></div>
           </div>
           <div style="display: flex; gap: 8px; margin-top: 12px;">
-            <button class="glass water-btn" data-amt="8">+ 8oz</button>
-            <button class="glass water-btn" data-amt="16">+ 16oz</button>
-            <button class="glass water-btn" data-amt="32">+ 32oz</button>
-            <button id="reset-water" class="glass icon-sm" style="margin-left: auto;"><i data-lucide="refresh-cw"></i></button>
+            <button class="water-btn primary-alt" data-amt="8">+ 8oz</button>
+            <button class="water-btn primary-alt" data-amt="16">+ 16oz</button>
+            <button class="water-btn primary-alt" data-amt="32">+ 32oz</button>
+            <button id="reset-water" class="glass icon-sm" style="margin-left: auto; color: var(--text-dim);"><i data-lucide="refresh-cw"></i></button>
           </div>
         </div>
 
@@ -81,7 +84,6 @@
           <div style="display: flex; gap: 10px; margin-bottom: 20px;">
             <button id="voice-btn" class="icon glass" title="Voice Log"><i data-lucide="mic"></i></button>
             <button id="photo-btn" class="icon glass" title="Photo Log"><i data-lucide="camera"></i></button>
-            <!-- Hidden Image Selectors -->
             <input type="file" id="file-input" accept="image/*" style="display: none;" />
             <input type="file" id="camera-input" accept="image/*" capture="environment" style="display: none;" />
             
@@ -138,6 +140,20 @@
         </a>
       </nav>
 
+      <!-- Water Adjustment Modal -->
+      <div id="water-modal" class="modal-overlay">
+        <div class="modal-content glass" style="max-width: 320px; text-align: center;">
+          <h3 style="margin-bottom: 10px;">Adjust Water</h3>
+          <p style="color: var(--text-dim); margin-bottom: 20px;">Current: <span id="modal-current-water">0</span> oz</p>
+          <div style="display: flex; justify-content: center; gap: 20px; align-items: center; margin-bottom: 24px;">
+            <button id="water-minus" class="icon glass" style="width: 60px; height: 60px; font-size: 2rem;">-</button>
+            <span style="font-size: 1.5rem; font-weight: 700; min-width: 60px;">8oz</span>
+            <button id="water-plus" class="icon glass" style="width: 60px; height: 60px; font-size: 2rem;">+</button>
+          </div>
+          <button id="close-water-modal" class="primary" style="width: 100%;">Done</button>
+        </div>
+      </div>
+
       <!-- Photo Selection Modal -->
       <div id="photo-modal" class="modal-overlay">
         <div class="modal-content glass" style="max-width: 320px;">
@@ -159,10 +175,14 @@
         <div class="modal-content glass">
           <div class="modal-header" style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
             <h3 id="confirm-title">Confirm Entry</h3>
-            <button id="delete-btn" class="icon-sm" style="background: rgba(239, 68, 68, 0.2); color: #ef4444; display: none;">
+            <button id="delete-btn" class="icon-sm" style="background: rgba(239, 68, 68, 0.2); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3);">
               <i data-lucide="trash-2"></i>
             </button>
           </div>
+          
+          <!-- Image Preview in Modal -->
+          <div id="confirm-img-preview" style="width: 100%; height: 160px; border-radius: 12px; background-size: cover; background-position: center; margin-bottom: 20px;"></div>
+
           <div class="input-group" style="margin-bottom: 15px;">
             <label>Food Name</label>
             <input type="text" id="confirm-name" />
