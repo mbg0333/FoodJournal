@@ -4,7 +4,7 @@ const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 export const analyzeFood = async (key, input, type) => {
   if (!key) return null;
   const genAI = new GoogleGenerativeAI(key.trim());
-  const modelsToTry = ["gemini-2.0-flash", "gemini-1.5-pro", "gemini-1.5-flash"];
+  const modelsToTry = ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"];
 
   for (const modelName of modelsToTry) {
     for (let attempt = 1; attempt <= 2; attempt++) {

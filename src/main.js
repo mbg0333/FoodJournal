@@ -262,7 +262,7 @@ function setupEventListeners() {
     const items = allMeals.filter(m => selectedIds.has(m.id));
     const agg = items.reduce((a, m) => ({ calories: a.calories + m.calories, protein: a.protein + (m.protein || 0), carbs: a.carbs + (m.carbs || 0), fat: a.fat + (m.fat || 0) }), { calories: 0, protein: 0, carbs: 0, fat: 0 });
     showLoading(true);
-    await storage.addFavorite({ ...agg, name, category: "Lunch", stockPhoto: `https://source.unsplash.com/featured/?${encodeURIComponent(res.photoSearchQuery || res.name)},food` });
+    await storage.addFavorite({ ...agg, name, category: "Lunch", stockPhoto: `https://source.unsplash.com/featured/?${encodeURIComponent(name)},food` });
     selectionMode = false; selectedIds.clear(); document.getElementById('bulk-actions').style.display = 'none';
     await loadUserData(); showLoading(false);
   };
@@ -323,7 +323,7 @@ async function handleLog(type, data = null) {
         res = await analyzeFood(currentSettings.geminiKey, input, type);
     }
 
-    if (res) {
+    if (res && typeof res === "object") {
       if (Array.isArray(res) && res.length > 1) {
         showSearchResultsModal(res);
       } else {
@@ -383,7 +383,7 @@ async function handleSearch(q) {
   });
 
   elements.searchResults.innerHTML = uniqueMatches.map(m => `
-    <div class="search-item glass" onclick="window.quickLog('${m.id}')">
+    <div class="search-item glass" onclick="window.quickLog('${m.id || ""}')">
       <div><strong>${m.name}</strong><small>${m.calories} kcal | ${m.category}</small></div>
       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
     </div>`).join('') || "<p style='text-align:center; padding: 20px; color: var(--text-dim)'>No recent history found.</p>";
@@ -396,7 +396,7 @@ async function handleAiWebSearch() {
   showLoading(true);
   try {
     const res = await analyzeFood(currentSettings.geminiKey, q, 'text'); // Uses existing analyzeFood for web results
-    if (res) {
+    if (res && typeof res === "object") {
       currentTempMeal = { ...res, stockPhoto: `https://source.unsplash.com/featured/?${encodeURIComponent(res.photoSearchQuery || res.name)},food` };
       openConfirmModal(currentTempMeal, false);
       elements.searchModal.style.display = 'none';
@@ -468,7 +468,7 @@ async function renderJournal() {
       </div>
       <div class="category-content">
         ${grp[cat].map(m => `
-          <div class="meal-item glass" onclick="${selectionMode ? `window.toggleSelect('${m.id}')` : `window.editMeal('${m.id}')`}">
+          <div class="meal-item glass" onclick="${selectionMode ? `window.toggleSelect('${m.id || ""}')` : `window.editMeal('${m.id || ""}')`}">
             ${selectionMode ? `<div style="padding:15px; border-right:1px solid var(--glass-border)"><input type="checkbox" ${selectedIds.has(m.id) ? 'checked' : ''} /></div>` : ''}
             <div class="meal-photo" style="background-image: url('${m.stockPhoto}')"></div>
             <div class="meal-details"><strong>${m.name}</strong><br><small>${m.calories} kcal | P:${m.protein}g</small></div>
