@@ -61,26 +61,10 @@ body {
 
 .header h1 { font-size: 1.5rem; }
 
-.icon {
-  width: 44px;
-  height: 44px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  color: var(--text-main);
-}
-.icon svg, .icon-sm svg, .nav-item svg {
-  width: 20px;
-  height: 20px;
-  /* stroke: currentColor overridden by hardcoded values or inline attributes */
-  display: block;
-}
 
-.icon i, .icon-sm i {
-  width: 20px;
-  height: 20px;
-}
+
+
+
 
 .date-nav {
   display: flex;
@@ -159,7 +143,7 @@ button { cursor: pointer; border: none; border-radius: 12px; padding: 10px 20px;
 button.primary { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; box-shadow: 0 4px 12px var(--primary-glow); }
 button.primary:hover { transform: translateY(-1px); }
 
-.icon-sm { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; }
+
 
 /* Categories */
 .category-container { display: flex; flex-direction: column; gap: 12px; }
@@ -187,7 +171,7 @@ button.primary:hover { transform: translateY(-1px); }
 .bottom-nav { position: fixed; bottom: 15px; left: 15px; right: 15px; height: 70px; display: flex; justify-content: space-around; align-items: center; z-index: 100; background: var(--glass); backdrop-filter: blur(20px); border: 1px solid var(--glass-border); border-radius: 20px; }
 .nav-item { color: var(--text-dim); display: flex; flex-direction: column; align-items: center; font-size: 0.7rem; text-decoration: none; font-weight: 600; }
 .nav-item.active { color: var(--primary); }
-.nav-item i, .nav-item svg { width: 22px; height: 22px; margin-bottom: 4px; /* stroke: currentColor overridden by hardcoded values or inline attributes */ }
+
 
 /* Modals */
 .modal-overlay { position: fixed; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.85); backdrop-filter: blur(6px); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 15px; }
@@ -210,15 +194,9 @@ button.primary:hover { transform: translateY(-1px); }
 .fav-header { padding: 15px; background: rgba(251, 191, 36, 0.05); border-left: 3px solid #fbbf24; display: flex; justify-content: space-between; align-items: center; border-radius: 8px; }
 
 
-/* Explicit Icon Color Fixes */
-svg {
-  shape-rendering: geometricPrecision;
-}
 
-.icon svg, .icon-sm svg {
-  stroke: var(--text-main) !important;
-  stroke-width: 2px !important;
-}
+
+
 
 .nav-item svg {
   stroke: var(--text-dim) !important;
@@ -237,13 +215,52 @@ svg {
   stroke: #60a5fa !important;
 }
 
-/* Ensure parents don''t squash children */
-.nav-item, .icon, .icon-sm {
-  display: flex !important;
-  align-items: center;
-  justify-content: center;
-}
+
 
 
 svg, svg * { visibility: visible !important; opacity: 1 !important; }
+
+
+
+/* --- ULTIMATE ICON SYSTEM --- */
+.icon, .icon-sm, .nav-item {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.icon { width: 44px; height: 44px; }
+.icon-sm { width: 36px; height: 36px; }
+
+svg {
+  display: block;
+  shape-rendering: geometricPrecision;
+  flex-shrink: 0;
+}
+
+/* Header & General Icons */
+.icon svg, .icon-sm svg {
+  width: 22px !important;
+  height: 22px !important;
+  stroke: #FFFFFF !important;
+  stroke-width: 2.5px !important;
+}
+
+/* Bottom Nav Icons */
+.nav-item svg {
+  width: 24px !important;
+  height: 24px !important;
+  stroke: #94a3b8 !important;
+  stroke-width: 2.5px !important;
+}
+
+.nav-item.active svg {
+  stroke: #6366f1 !important;
+}
+
+/* Specific Context Colors */
+#logout-btn svg { stroke: #ef4444 !important; }
+#open-favs-log-btn svg { stroke: #fbbf24 !important; }
+.water-card svg { stroke: #60a5fa !important; }
 
