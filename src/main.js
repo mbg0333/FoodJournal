@@ -12,14 +12,12 @@ import { analyzeFood } from './lib/gemini';
 let currentUser = null;
 let currentTempMeal = null; 
 let currentDate = new Date().toISOString().split('T')[0];
-let currentSettings = {
-  geminiKey: localStorage.getItem('gemini_key') || '',
-  calGoal: 2000,
-  startWeight: 0,
-  goalWeight: 0,
-  currentWeight: 0
-};
+let currentSettings = { geminiKey: localStorage.getItem('gemini_key') || '', calGoal: 2000, currentWeight: 180 };
 let categoriesExpanded = { Breakfast: true, Lunch: true, Dinner: true, Snack: true };
+let currentFavorites = [];
+let allMeals = [];
+let selectionMode = false;
+let selectedIds = new Set();
 
 const elements = {
   authScreen: document.getElementById('auth-screen'),
@@ -27,439 +25,123 @@ const elements = {
   loginBtn: document.getElementById('login-btn'),
   logoutBtn: document.getElementById('logout-btn'),
   settingsBtn: document.getElementById('settings-btn'),
-  saveSettingsBtn: document.getElementById('save-settings'),
-  closeSettingsBtn: document.getElementById('close-settings'),
-  settingsModal: document.getElementById('settings-modal'),
-  logBtn: document.getElementById('log-btn'),
-  voiceBtn: document.getElementById('voice-btn'),
-  photoBtn: document.getElementById('photo-btn'),
-  fileInput: document.getElementById('file-input'),
-  cameraInput: document.getElementById('camera-input'),
-  textLog: document.getElementById('text-log'),
-  shoppingList: document.getElementById('shopping-list'),
-  loadingOverlay: document.getElementById('loading-overlay'),
-  voiceStatus: document.getElementById('voice-status'),
-  goalProgress: document.getElementById('goal-progress'),
-  currentWeightDisplay: document.getElementById('current-weight'),
-  goalWeightDisplay: document.getElementById('goal-weight'),
-  apiKeyInput: document.getElementById('api-key'),
-  calGoalInput: document.getElementById('cal-goal-input'),
-  proteinSuggest: document.getElementById('suggested-protein-val'),
-  waterSuggest: document.getElementById('suggested-water-val'),
-  startWeightInput: document.getElementById('start-weight-input'),
-  goalWeightInput: document.getElementById('goal-weight-input'),
-  currentWeightInput: document.getElementById('current-weight-input'),
+  searchBtn: document.getElementById('search-btn'),
   navItems: document.querySelectorAll('.nav-item'),
-  views: {
-    journal: document.getElementById('journal-view'),
-    weight: document.getElementById('weight-view'),
-    shopping: document.getElementById('shopping-view')
-  },
-  // Date Nav
-  prevDay: document.getElementById('prev-day'),
-  nextDay: document.getElementById('next-day'),
-  dateDisplay: document.getElementById('current-date-display'),
-  datePickerHidden: document.getElementById('date-picker-hidden'),
-  // Summary
-  totalCals: document.getElementById('total-calories'),
-  goalCals: document.getElementById('goal-calories-display'),
-  totalPro: document.getElementById('total-protein'),
-  goalPro: document.getElementById('goal-protein-display'),
-  calBar: document.getElementById('cal-progress-bar'),
-  proBar: document.getElementById('pro-progress-bar'),
-  // Water
-  waterCard: document.getElementById('water-card'),
-  currentWater: document.getElementById('current-water'),
-  goalWater: document.getElementById('goal-water'),
-  waterBar: document.getElementById('water-progress-bar'),
-  waterBtns: document.querySelectorAll('.water-btn'),
-  resetWater: document.getElementById('reset-water'),
-  waterModal: document.getElementById('water-modal'),
-  modalCurrentWaterValue: document.getElementById('modal-current-water'),
-  waterMinus: document.getElementById('water-minus'),
-  waterPlus: document.getElementById('water-plus'),
-  closeWaterModal: document.getElementById('close-water-modal'),
-  // Categorized List
-  categorizedMeals: document.getElementById('categorized-meals'),
-  // Photo Modal
-  photoModal: document.getElementById('photo-modal'),
-  takePhotoBtn: document.getElementById('take-photo-btn'),
-  choosePhotoBtn: document.getElementById('choose-photo-btn'),
-  closePhotoModal: document.getElementById('close-photo-modal'),
-  // Confirm/Edit Modal
-  confirmModal: document.getElementById('confirm-modal'),
-  confirmTitle: document.getElementById('confirm-title'),
-  confirmImgPreview: document.getElementById('confirm-img-preview'),
-  confirmName: document.getElementById('confirm-name'),
-  confirmCalories: document.getElementById('confirm-calories'),
-  confirmProtein: document.getElementById('confirm-protein'),
-  confirmCarbs: document.getElementById('confirm-carbs'),
-  confirmFat: document.getElementById('confirm-fat'),
-  servingContainer: document.getElementById('serving-container'),
-  servingSlider: document.getElementById('serving-slider'),
-  servingLabel: document.getElementById('serving-label'),
-  confirmCategory: document.getElementById('confirm-category'),
-  saveConfirm: document.getElementById('save-confirm'),
-  cancelConfirm: document.getElementById('cancel-confirm'),
-  deleteBtn: document.getElementById('delete-btn')
+  views: { journal: document.getElementById('journal-view'), weight: document.getElementById('weight-view'), favorites: document.getElementById('favorites-view'), shopping: document.getElementById('shopping-view') },
+  prevDay: document.getElementById('prev-day'), nextDay: document.getElementById('next-day'),
+  dateDisplay: document.getElementById('current-date-display'), datePickerHidden: document.getElementById('date-picker-hidden'),
+  totalCals: document.getElementById('total-calories'), goalCals: document.getElementById('goal-calories-display'),
+  totalPro: document.getElementById('total-protein'), goalPro: document.getElementById('goal-protein-display'),
+  calBar: document.getElementById('cal-progress-bar'), proBar: document.getElementById('pro-progress-bar'),
+  waterCard: document.getElementById('water-card'), currentWater: document.getElementById('current-water'),
+  goalWater: document.getElementById('goal-water'), waterBar: document.getElementById('water-progress-bar'),
+  waterBtns: document.querySelectorAll('.water-btn'), resetWater: document.getElementById('reset-water'),
+  logBtn: document.getElementById('log-btn'), textLog: document.getElementById('text-log'),
+  voiceBtn: document.getElementById('voice-btn'), photoBtn: document.getElementById('photo-btn'),
+  openFavsLogBtn: document.getElementById('open-favs-log-btn'), favsDropdown: document.getElementById('favs-dropdown'), favsDropdownList: document.getElementById('favs-dropdown-list'),
+  categorizedMeals: document.getElementById('categorized-meals'), favoritesList: document.getElementById('favorites-list'),
+  confirmModal: document.getElementById('confirm-modal'), confirmImgPreview: document.getElementById('confirm-img-preview'), confirmName: document.getElementById('confirm-name'),
+  confirmCalories: document.getElementById('confirm-calories'), confirmProtein: document.getElementById('confirm-protein'), confirmCarbs: document.getElementById('confirm-carbs'), confirmFat: document.getElementById('confirm-fat'),
+  confirmCategory: document.getElementById('confirm-category'), saveConfirm: document.getElementById('save-confirm'), saveAsFavBtn: document.getElementById('save-as-fav-btn'), deleteBtn: document.getElementById('delete-btn'),
+  loadingOverlay: document.getElementById('loading-overlay'), searchModal: document.getElementById('search-modal'), globalSearchInput: document.getElementById('global-search-input'), searchResults: document.getElementById('search-results'), closeSearch: document.getElementById('close-search')
 };
 
 function init() {
-  lucide.createIcons();
   setupEventListeners();
   onAuthStateChanged(auth, async (user) => {
     if (user) {
-      currentUser = user;
-      elements.authScreen.style.display = 'none';
-      elements.app.style.display = 'block';
-      await loadUserData();
+      currentUser = user; elements.authScreen.style.display = 'none'; elements.app.style.display = 'block';
+      await loadUserData(); refreshIcons();
     } else {
-      currentUser = null;
-      elements.authScreen.style.display = 'flex';
-      elements.app.style.display = 'none';
+      currentUser = null; elements.authScreen.style.display = 'flex'; elements.app.style.display = 'none';
     }
   });
 }
+
+function refreshIcons() { if (window.lucide) window.lucide.createIcons(); }
 
 function setupEventListeners() {
   elements.loginBtn.addEventListener('click', () => signInWithPopup(auth, new GoogleAuthProvider()));
   elements.logoutBtn.addEventListener('click', () => signOut(auth));
-
   elements.prevDay.addEventListener('click', () => changeDate(-1));
   elements.nextDay.addEventListener('click', () => changeDate(1));
-  
-  // Date Picker Logic
   elements.dateDisplay.addEventListener('click', () => elements.datePickerHidden.showPicker());
-  elements.datePickerHidden.addEventListener('change', (e) => {
-    currentDate = e.target.value;
-    updateDateDisplay();
-    renderJournal();
-  });
-
-  elements.navItems.forEach(item => {
-    item.addEventListener('click', (e) => {
-      e.preventDefault();
-      switchTab(item.dataset.tab);
-    });
-  });
-
-  elements.settingsBtn.addEventListener('click', () => {
-    elements.apiKeyInput.value = currentSettings.geminiKey || '';
-    elements.calGoalInput.value = currentSettings.calGoal || '';
-    elements.startWeightInput.value = currentSettings.startWeight || '';
-    elements.goalWeightInput.value = currentSettings.goalWeight || '';
-    elements.currentWeightInput.value = currentSettings.currentWeight || '';
-    updateSuggestedValues();
-    elements.settingsModal.style.display = 'flex';
-  });
-
-  elements.calGoalInput.addEventListener('input', updateSuggestedValues);
-  elements.currentWeightInput.addEventListener('input', updateSuggestedValues);
-  elements.closeSettingsBtn.addEventListener('click', () => elements.settingsModal.style.display = 'none');
-
-  elements.saveSettingsBtn.addEventListener('click', async () => {
-    const newSettings = {
-      ...currentSettings,
-      geminiKey: elements.apiKeyInput.value.trim(),
-      calGoal: parseInt(elements.calGoalInput.value) || 2000,
-      startWeight: parseFloat(elements.startWeightInput.value) || 0,
-      goalWeight: parseFloat(elements.goalWeightInput.value) || 0,
-      currentWeight: parseFloat(elements.currentWeightInput.value) || 0
-    };
-    showLoading(true);
-    await storage.saveSettings(newSettings);
-    localStorage.setItem('gemini_key', newSettings.geminiKey);
-    currentSettings = newSettings;
-    await updateDashboard();
-    await renderJournal();
-    showLoading(false);
-    elements.settingsModal.style.display = 'none';
-  });
-
-  // Water Adjustment Logic
-  elements.waterBtns.forEach(btn => {
-    btn.addEventListener('click', async (e) => {
-      e.stopPropagation();
-      const amt = parseInt(btn.dataset.amt);
-      const next = Math.max(0, parseInt(elements.currentWater.textContent) + amt);
-      elements.currentWater.textContent = next;
-      updateWaterSummary(next);
-      await storage.setWater(currentDate, next);
-    });
-  });
-
-  elements.resetWater.addEventListener('click', async (e) => {
-    e.stopPropagation();
-    if (confirm('Reset water intake?')) {
-      elements.currentWater.textContent = 0;
-      updateWaterSummary(0);
-      await storage.setWater(currentDate, 0);
-    }
-  });
-
-  elements.waterCard.addEventListener('click', () => {
-    elements.modalCurrentWaterValue.textContent = elements.currentWater.textContent;
-    elements.waterModal.style.display = 'flex';
-  });
-
-  elements.waterMinus.addEventListener('click', async () => {
-    const current = Math.max(0, parseInt(elements.modalCurrentWaterValue.textContent) - 8);
-    elements.modalCurrentWaterValue.textContent = current;
-    elements.currentWater.textContent = current;
-    updateWaterSummary(current);
-    await storage.setWater(currentDate, current);
-  });
-
-  elements.waterPlus.addEventListener('click', async () => {
-    const current = parseInt(elements.modalCurrentWaterValue.textContent) + 8;
-    elements.modalCurrentWaterValue.textContent = current;
-    elements.currentWater.textContent = current;
-    updateWaterSummary(current);
-    await storage.setWater(currentDate, current);
-  });
-
-  elements.closeWaterModal.addEventListener('click', () => elements.waterModal.style.display = 'none');
-
-  // Logging
+  elements.datePickerHidden.addEventListener('change', (e) => { currentDate = e.target.value; updateDateDisplay(); renderJournal(); });
+  elements.navItems.forEach(item => item.addEventListener('click', (e) => { e.preventDefault(); switchTab(item.dataset.tab); }));
   elements.logBtn.addEventListener('click', () => handleLog('text'));
-  elements.voiceBtn.addEventListener('click', startVoiceRecognition);
-  elements.photoBtn.addEventListener('click', () => elements.photoModal.style.display = 'flex');
-  elements.closePhotoModal.addEventListener('click', () => elements.photoModal.style.display = 'none');
-  
-  elements.takePhotoBtn.addEventListener('click', () => {
-    elements.photoModal.style.display = 'none';
-    elements.cameraInput.click();
-  });
-  
-  elements.choosePhotoBtn.addEventListener('click', () => {
-    elements.photoModal.style.display = 'none';
-    elements.fileInput.click();
-  });
-
-  elements.fileInput.addEventListener('change', (e) => handleLog('photo', e.target.files[0]));
-  elements.cameraInput.addEventListener('change', (e) => handleLog('photo', e.target.files[0]));
   elements.textLog.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleLog('text'); });
+  elements.voiceBtn.addEventListener('click', startVoiceRecognition);
+  elements.photoBtn.addEventListener('click', () => document.getElementById('photo-modal').style.display = 'flex');
+  elements.openFavsLogBtn.addEventListener('click', (e) => { e.stopPropagation(); const isVisible = elements.favsDropdown.style.display === 'block'; elements.favsDropdown.style.display = isVisible ? 'none' : 'block'; if (!isVisible) renderFavsDropdown(); });
+  document.addEventListener('click', () => elements.favsDropdown.style.display = 'none');
+  elements.saveConfirm.addEventListener('click', async () => { if (!currentTempMeal) return; const isEdit = !!currentTempMeal.id; const meal = buildMealFromForm(); showLoading(true); if (isEdit) await storage.updateMeal(currentTempMeal.id, meal); else await storage.addMeal(meal); await renderJournal(); showLoading(false); elements.confirmModal.style.display = 'none'; });
+  elements.saveAsFavBtn.addEventListener('click', async () => { if (!currentTempMeal) return; const name = prompt("Name this favorite:", currentTempMeal.name); if (!name) return; const meal = buildMealFromForm(); showLoading(true); await storage.addFavorite({ ...meal, name }); await loadUserData(); showLoading(false); alert("Saved to Favorites!"); });
+  elements.deleteBtn.addEventListener('click', async () => { if (!currentTempMeal?.id) return; if (confirm("Delete?")) { showLoading(true); await storage.deleteMeal(currentTempMeal.id); await renderJournal(); showLoading(false); elements.confirmModal.style.display = 'none'; } });
+  elements.searchBtn.addEventListener('click', () => elements.searchModal.style.display = 'flex');
+  elements.closeSearch.addEventListener('click', () => elements.searchModal.style.display = 'none');
+  elements.globalSearchInput.addEventListener('input', (e) => handleSearch(e.target.value));
+  elements.settingsBtn.addEventListener('click', () => { document.getElementById('settings-modal').style.display = 'flex'; document.getElementById('api-key').value = currentSettings.geminiKey; });
+  document.getElementById('save-settings').addEventListener('click', async () => { currentSettings.geminiKey = document.getElementById('api-key').value.trim(); currentSettings.calGoal = parseInt(document.getElementById('cal-goal-input').value) || 2000; currentSettings.currentWeight = parseFloat(document.getElementById('current-weight-input').value) || 180; await storage.saveSettings(currentSettings); await loadUserData(); document.getElementById('settings-modal').style.display = 'none'; });
+  elements.waterBtns.forEach(btn => btn.addEventListener('click', async (e) => { e.stopPropagation(); const amt = parseInt(btn.dataset.amt); const next = Math.max(0, parseInt(elements.currentWater.textContent) + amt); elements.currentWater.textContent = next; updateWaterSummary(next); await storage.setWater(currentDate, next); }));
+  elements.resetWater.addEventListener('click', async (e) => { e.stopPropagation(); if(confirm("Reset?")) { elements.currentWater.textContent = 0; updateWaterSummary(0); await storage.setWater(currentDate, 0); } });
 
-  elements.servingSlider.addEventListener('input', updateConfirmValues);
-  elements.cancelConfirm.addEventListener('click', () => { elements.confirmModal.style.display = 'none'; currentTempMeal = null; });
-
-  elements.deleteBtn.addEventListener('click', async () => {
-    if (!currentTempMeal?.id) return;
-    if (confirm('Delete this entry?')) {
-      showLoading(true);
-      await storage.deleteMeal(currentTempMeal.id);
-      await renderJournal();
-      showLoading(false);
-      elements.confirmModal.style.display = 'none';
-      currentTempMeal = null;
-    }
-  });
-
-  elements.saveConfirm.addEventListener('click', async () => {
-    if (!currentTempMeal) return;
-    const isEdit = !!currentTempMeal.id;
-    const finalMeal = {
-      ...currentTempMeal,
-      name: elements.confirmName.value,
-      calories: parseInt(elements.confirmCalories.value),
-      protein: parseInt(elements.confirmProtein.value) || 0,
-      carbs: parseInt(elements.confirmCarbs.value) || 0,
-      fat: parseInt(elements.confirmFat.value) || 0,
-      category: elements.confirmCategory.value,
-      // Use existing stock photo if available, otherwise generate new one
-      stockPhoto: currentTempMeal.stockPhoto || `https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=300&q=80&sig=${Date.now()}_${encodeURIComponent(elements.confirmName.value)}`,
-      timestamp: currentTempMeal.timestamp || new Date().toISOString()
-    };
+  // Bulk Select
+  document.getElementById('bulk-select-btn').addEventListener('click', () => { selectionMode = !selectionMode; selectedIds.clear(); document.getElementById('bulk-actions').style.display = selectionMode ? 'block' : 'none'; renderJournal(); });
+  document.getElementById('save-bulk-fav-btn').addEventListener('click', async () => {
+    if (selectedIds.size === 0) return;
+    const name = prompt("Name this group favorite:");
+    if (!name) return;
+    const meals = await storage.getMeals(currentDate);
+    const selectedMeals = meals.filter(m => selectedIds.has(m.id));
+    const aggregate = selectedMeals.reduce((acc, m) => ({ calories: acc.calories + m.calories, protein: acc.protein + (m.protein || 0), carbs: acc.carbs + (m.carbs || 0), fat: acc.fat + (m.fat || 0) }), { calories: 0, protein: 0, carbs: 0, fat: 0 });
     showLoading(true);
-    if (isEdit) await storage.updateMeal(currentTempMeal.id, finalMeal);
-    else await storage.addMeal(finalMeal);
-    await renderJournal();
-    showLoading(false);
-    elements.confirmModal.style.display = 'none';
-    currentTempMeal = null;
-    elements.textLog.value = '';
+    await storage.addFavorite({ ...aggregate, name, category: "Lunch", stockPhoto: "https://images.unsplash.com/photo-1547592166-23ac45744acd?auto=format&fit=crop&w=300&q=80" });
+    selectionMode = false; selectedIds.clear(); document.getElementById('bulk-actions').style.display = 'none';
+    await loadUserData(); showLoading(false);
   });
 }
 
-function updateSuggestedValues() {
-  const weight = parseFloat(elements.currentWeightInput.value) || 0;
-  elements.proteinSuggest.textContent = Math.round(weight * 0.8) || '--';
-  elements.waterSuggest.textContent = Math.round(weight * 0.5) || '--';
-}
-
-function changeDate(days) {
-  const date = new Date(currentDate + 'T12:00:00');
-  date.setDate(date.getDate() + days);
-  currentDate = date.toISOString().split('T')[0];
-  updateDateDisplay();
-  renderJournal();
-}
-
-function updateDateDisplay() {
-  const today = new Date().toISOString().split('T')[0];
-  elements.dateDisplay.textContent = currentDate === today ? 'Today' : new Date(currentDate + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-  elements.datePickerHidden.value = currentDate;
-}
-
-function updateConfirmValues() {
-  if (!currentTempMeal || currentTempMeal.id) return;
-  const multiplier = parseFloat(elements.servingSlider.value);
-  elements.servingLabel.textContent = `${multiplier}x`;
-  elements.confirmCalories.value = Math.round((currentTempMeal.rawCalories || currentTempMeal.calories) * multiplier);
-  elements.confirmProtein.value = Math.round((currentTempMeal.rawProtein || currentTempMeal.protein || 0) * multiplier);
-  elements.confirmCarbs.value = Math.round((currentTempMeal.rawCarbs || currentTempMeal.carbs || 0) * multiplier);
-  elements.confirmFat.value = Math.round((currentTempMeal.rawFat || currentTempMeal.fat || 0) * multiplier);
-}
-
-async function loadUserData() {
-  if (!currentUser) return;
-  showLoading(true);
-  try {
-    const settings = await storage.getSettings();
-    currentSettings = { 
-      ...currentSettings,
-      geminiKey: settings.geminiKey || localStorage.getItem('gemini_key') || import.meta.env.VITE_GEMINI_API_KEY || '',
-      calGoal: settings.calGoal || 2000,
-      startWeight: settings.startWeight || 0,
-      goalWeight: settings.goalWeight || 0,
-      currentWeight: settings.currentWeight || 0
-    };
-    updateDateDisplay();
-    await updateDashboard();
-    await renderJournal();
-    await renderShoppingList();
-  } catch (e) { console.error(e); }
-  finally { showLoading(false); }
-}
-
-function switchTab(tab) {
-  Object.keys(elements.views).forEach(v => { elements.views[v].style.display = v === tab ? 'block' : 'none'; });
-  elements.navItems.forEach(item => { item.classList.toggle('active', item.dataset.tab === tab); });
-}
-
-async function handleLog(type, data = null) {
-  if (!currentSettings.geminiKey) return alert('Add Gemini Key in Settings.');
-  showLoading(true);
-  try {
-    let input = type === 'text' ? elements.textLog.value : data;
-    if (type === 'text' && !input) return;
-    if (type === 'photo' && data) input = await toBase64(data);
-    const result = await analyzeFood(currentSettings.geminiKey, input, type);
-    if (result) {
-      currentTempMeal = { 
-        ...result, 
-        rawCalories: result.calories, 
-        rawProtein: result.protein, 
-        rawCarbs: result.carbs, 
-        rawFat: result.fat,
-        // unique sig for each scan
-        stockPhoto: `https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=300&q=80&sig=${Date.now()}_${encodeURIComponent(result.name)}`
-      };
-      openConfirmModal(currentTempMeal, false);
-    } else alert('AI failed.');
-  } catch (e) { console.error(e); } finally { showLoading(false); }
-}
-
-function openConfirmModal(meal, isEdit = false) {
-  elements.confirmTitle.textContent = isEdit ? 'Edit Entry' : `Confirm: ${meal.name}`;
-  elements.confirmName.value = meal.name;
-  elements.confirmCalories.value = meal.calories;
-  elements.confirmProtein.value = meal.protein || 0;
-  elements.confirmCarbs.value = meal.carbs || 0;
-  elements.confirmFat.value = meal.fat || 0;
-  elements.confirmCategory.value = meal.category || 'Lunch';
-  
-  // Show image preview
-  const photoUrl = meal.stockPhoto || `https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=300&bit=q80&sig=${encodeURIComponent(meal.name)}`;
-  elements.confirmImgPreview.style.backgroundImage = `url('${photoUrl}')`;
-  
-  elements.deleteBtn.style.display = isEdit ? 'flex' : 'none';
-  elements.servingContainer.style.display = isEdit ? 'none' : 'block';
-  if (!isEdit) { elements.servingSlider.value = 1; elements.servingLabel.textContent = '1x'; }
-  elements.confirmModal.style.display = 'flex';
-}
-
-function startVoiceRecognition() {
-  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR) return alert('Not supported.');
-  const recognition = new SR();
-  recognition.onresult = (e) => { elements.textLog.value = e.results[0][0].transcript; handleLog('text'); };
-  recognition.start();
-}
-
+function buildMealFromForm() { return { name: elements.confirmName.value, calories: parseInt(elements.confirmCalories.value), protein: parseInt(elements.confirmProtein.value) || 0, carbs: parseInt(elements.confirmCarbs.value) || 0, fat: parseInt(elements.confirmFat.value) || 0, category: elements.confirmCategory.value, stockPhoto: currentTempMeal.stockPhoto, timestamp: currentTempMeal.timestamp || new Date().toISOString() }; }
+async function handleLog(type, data = null) { if (!currentSettings.geminiKey) return alert("Key missing."); showLoading(true); try { const input = type === 'text' ? elements.textLog.value : data; const result = await analyzeFood(currentSettings.geminiKey, input, type); if (result) { currentTempMeal = { ...result, stockPhoto: `https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=300&q=80&sig=${Date.now()}` }; openConfirmModal(currentTempMeal, false); } } catch (e) { console.error(e); } finally { showLoading(false); } }
+function openConfirmModal(meal, isEdit) { elements.confirmTitle.textContent = isEdit ? "Edit Entry" : "Confirm Entry"; elements.confirmName.value = meal.name; elements.confirmCalories.value = meal.calories; elements.confirmProtein.value = meal.protein || 0; elements.confirmCarbs.value = meal.carbs || 0; elements.confirmFat.value = meal.fat || 0; elements.confirmCategory.value = meal.category || "Lunch"; elements.confirmImgPreview.style.backgroundImage = `url('${meal.stockPhoto}')`; elements.deleteBtn.style.display = isEdit ? "flex" : "none"; elements.confirmModal.style.display = 'flex'; refreshIcons(); }
+async function handleSearch(query) { if (query.length < 2) { elements.searchResults.innerHTML = ""; return; } const matches = allMeals.filter(m => m.name.toLowerCase().includes(query.toLowerCase())).slice(0, 10); elements.searchResults.innerHTML = matches.map(m => `<div class="search-item glass" onclick="window.quickLog('${m.id}')"><strong>${m.name}</strong> • ${m.calories} kcal</div>`).join('') || "<p style='text-align:center'>No matches.</p>"; }
+window.quickLog = (id) => { const meal = allMeals.find(m => m.id === id); if (meal) { currentTempMeal = { ...meal, timestamp: new Date().toISOString() }; openConfirmModal(currentTempMeal, false); elements.searchModal.style.display = 'none'; } };
+async function loadUserData() { const s = await storage.getSettings(); if (s.calGoal) currentSettings = { ...currentSettings, ...s }; currentFavorites = await storage.getFavorites(); allMeals = await storage.getMeals(); updateDateDisplay(); await renderJournal(); await renderFavorites(); updateDashboard(); }
+function switchTab(tab) { Object.keys(elements.views).forEach(v => elements.views[v].style.display = v === tab ? 'block' : 'none'); elements.navItems.forEach(item => item.classList.toggle('active', item.dataset.tab === tab)); refreshIcons(); }
 async function renderJournal() {
-  if (!currentUser) return;
-  const meals = await storage.getMeals(currentDate);
-  const water = await storage.getWater(currentDate);
-  const grouped = { Breakfast: [], Lunch: [], Dinner: [], Snack: [] };
-  let totalCals = 0, totalPro = 0;
-  meals.forEach(m => {
-    totalCals += (m.calories || 0); totalPro += (m.protein || 0);
-    if (grouped[m.category]) grouped[m.category].push(m); else grouped.Snack.push(m);
-  });
-  elements.currentWater.textContent = water;
-  updateWaterSummary(water);
+  const meals = await storage.getMeals(currentDate); const water = await storage.getWater(currentDate); elements.currentWater.textContent = water; updateWaterSummary(water);
+  const grouped = { Breakfast: [], Lunch: [], Dinner: [], Snack: [] }; let totalCals = 0, totalPro = 0;
+  meals.forEach(m => { totalCals += m.calories; totalPro += m.protein; if (grouped[m.category]) grouped[m.category].push(m); else grouped.Snack.push(m); });
+  const pGoal = Math.round(currentSettings.currentWeight * 0.825); elements.totalCals.textContent = totalCals; elements.totalPro.textContent = totalPro; elements.goalCals.textContent = currentSettings.calGoal; elements.goalPro.textContent = pGoal;
+  elements.calBar.style.width = `${Math.min(100, (totalCals/currentSettings.calGoal)*100)}%`; elements.proBar.style.width = `${Math.min(100, (totalPro/pGoal)*100)}%`;
   elements.categorizedMeals.innerHTML = Object.keys(grouped).map(cat => `
     <div class="category-section glass ${categoriesExpanded[cat] ? '' : 'collapsed'}" data-cat="${cat}">
-      <div class="category-header">
-        <h4><i data-lucide="chevron-down" class="chevron"></i> ${cat}</h4>
-        <span class="category-stats">${grouped[cat].reduce((s, m) => s + (m.calories || 0), 0)} kcal • ${grouped[cat].reduce((s, m) => s + (m.protein || 0), 0)}g P</span>
-      </div>
+      <div class="category-header" onclick="window.toggleCat('${cat}')"><h4><i data-lucide="chevron-down" class="chevron"></i> ${cat}</h4><span class="category-stats">${grouped[cat].length} items • ${grouped[cat].reduce((s, m) => s+m.calories, 0)} kcal</span></div>
       <div class="category-content">
-        ${grouped[cat].length === 0 ? '<p style="color:var(--text-dim);font-size:0.8rem">Empty</p>' : grouped[cat].map(m => `
-          <div class="meal-item glass" data-id="${m.id}">
-            <div class="meal-photo" style="background-image: url('${m.stockPhoto || `https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=150&q=80&sig=${encodeURIComponent(m.name)}`}')"></div>
+        ${grouped[cat].map(m => `
+          <div class="meal-item glass" onclick="${selectionMode ? `window.toggleSelect('${m.id}')` : `window.editMeal('${m.id}')`}">
+            ${selectionMode ? `<div style="padding:15px;"><input type="checkbox" ${selectedIds.has(m.id) ? 'checked' : ''} /></div>` : ''}
+            <div class="meal-photo" style="background-image: url('${m.stockPhoto}')"></div>
             <div class="meal-details"><span class="meal-name">${m.name}</span><span class="meal-meta">${m.calories} kcal</span>
-              <div class="macro-chips"><span class="chip protein">P: ${m.protein || 0}g</span><span class="chip carbs">C: ${m.carbs || 0}g</span><span class="chip fat">F: ${m.fat || 0}g</span></div>
+              <div class="macro-chips"><span class="chip protein">P: ${m.protein}g</span><span class="chip carbs">C: ${m.carbs}g</span><span class="chip fat">F: ${m.fat}g</span></div>
             </div>
-          </div>`).join('')}
+          </div>
+        `).join('') || "<p style='color:var(--text-dim)'>Empty</p>"}
       </div>
     </div>`).join('');
-  lucide.createIcons();
-  setupJournalInteractions(grouped);
-  updateSummary(totalCals, totalPro);
+  refreshIcons();
 }
-
-function setupJournalInteractions(grouped) {
-  document.querySelectorAll('.category-header').forEach(h => h.addEventListener('click', () => {
-    const s = h.parentElement; categoriesExpanded[s.dataset.cat] = !categoriesExpanded[s.dataset.cat]; s.classList.toggle('collapsed');
-  }));
-  document.querySelectorAll('.meal-item').forEach(i => i.addEventListener('click', (e) => {
-    const meal = Object.values(grouped).flat().find(m => m.id === i.dataset.id);
-    if (meal) { currentTempMeal = meal; openConfirmModal(meal, true); }
-  }));
-}
-
-function updateSummary(cals, pro) {
-  const calGoal = currentSettings.calGoal || 2000;
-  const proGoal = Math.round((currentSettings.currentWeight || 180) * 0.8) || 150;
-  elements.totalCals.textContent = cals; elements.goalCals.textContent = calGoal;
-  elements.totalPro.textContent = pro; elements.goalPro.textContent = proGoal;
-  elements.calBar.style.width = `${Math.min(100, (cals / calGoal) * 100)}%`;
-  elements.proBar.style.width = `${Math.min(100, (pro / proGoal) * 100)}%`;
-}
-
-function updateWaterSummary(amt) {
-  const goal = Math.round((currentSettings.currentWeight || 180) * 0.5) || 90;
-  elements.goalWater.textContent = goal; elements.waterBar.style.width = `${Math.min(100, (amt / goal) * 100)}%`;
-}
-
-async function renderShoppingList() {
-  const list = await storage.getShoppingList();
-  elements.shoppingList.innerHTML = list.map(item => `<div class="shopping-item glass"><span>${item.name}</span><span class="meal-meta">${item.suggestions ? item.suggestions.join(', ') : ''}</span></div>`).join('');
-}
-
-async function updateDashboard() {
-  elements.currentWeightDisplay.textContent = `${currentSettings.currentWeight || '--'} lbs`;
-  elements.goalWeightDisplay.textContent = `${currentSettings.goalWeight || '--'} lbs`;
-  if (currentSettings.goalWeight > 0 && currentSettings.startWeight > 0) {
-    const total = currentSettings.startWeight - currentSettings.goalWeight;
-    const lost = currentSettings.startWeight - currentSettings.currentWeight;
-    elements.goalProgress.style.width = `${Math.min(100, Math.max(0, (lost / total) * 100))}%`;
-  } else elements.goalProgress.style.width = '0%';
-}
-
+window.toggleCat = (cat) => { categoriesExpanded[cat] = !categoriesExpanded[cat]; renderJournal(); };
+window.editMeal = (id) => { const m = allMeals.find(meal => meal.id === id); if (m) { currentTempMeal = m; openConfirmModal(m, true); } };
+window.toggleSelect = (id) => { if (selectedIds.has(id)) selectedIds.delete(id); else selectedIds.add(id); document.getElementById('selected-count').textContent = `${selectedIds.size} items selected`; renderJournal(); };
+window.logFav = async (id) => { const f = currentFavorites.find(fav => fav.id === id); if (f) { showLoading(true); await storage.addMeal({ ...f, timestamp: new Date().toISOString(), id: null }); await loadUserData(); showLoading(false); } };
+window.deleteFav = async (id) => { if (confirm("Delete?")) { showLoading(true); await storage.deleteFavorite(id); await loadUserData(); showLoading(false); } };
+async function renderFavorites() { elements.favoritesList.innerHTML = currentFavorites.map(f => `<div class="fav-item glass"><div class="fav-header"><div><strong>${f.name}</strong><div style="font-size:0.8rem; color:var(--text-dim)">${f.calories} kcal • P:${f.protein}g C:${f.carbs}g F:${f.fat}g</div></div><div style="display:flex; gap:10px;"><button class="primary" onclick="window.logFav('${f.id}')" style="padding:6px 12px; font-size:0.8rem">Add</button><button class="glass" onclick="window.deleteFav('${f.id}')" style="color:#ef4444"><i data-lucide="trash-2"></i></button></div></div></div>`).join('') || "<p style='text-align:center; padding:40px'>Save favorites here!</p>"; refreshIcons(); }
+function renderFavsDropdown() { elements.favsDropdownList.innerHTML = currentFavorites.map(f => `<div class="fav-drop-item" onclick="window.logFav('${f.id}')"><span>${f.name}</span><span style="color:var(--text-dim); font-size:0.75rem">${f.calories} kcal</span></div>`).join('') || "<div style='padding:15px'>No favorites</div>"; }
+function updateDateDisplay() { const today = new Date().toISOString().split('T')[0]; elements.dateDisplay.textContent = currentDate === today ? "Today" : new Date(currentDate + "T12:00:00").toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); elements.datePickerHidden.value = currentDate; }
+function changeDate(days) { const d = new Date(currentDate + "T12:00:00"); d.setDate(d.getDate() + days); currentDate = d.toISOString().split('T')[0]; updateDateDisplay(); renderJournal(); }
+function updateWaterSummary(amt) { const goal = Math.round(currentSettings.currentWeight * 0.5); elements.goalWater.textContent = goal; elements.waterBar.style.width = `${Math.min(100, (amt / goal) * 100)}%`; }
+function updateDashboard() { elements.currentWeightDisplay.textContent = currentSettings.currentWeight + " lbs"; elements.goalWeightDisplay.textContent = (currentSettings.goalWeight || "--") + " lbs"; }
 function showLoading(s) { elements.loadingOverlay.style.display = s ? 'flex' : 'none'; }
-function toBase64(f) { return new Promise((s, r) => { const reader = new FileReader(); reader.readAsDataURL(f); reader.onload = () => s(reader.result.split(',')[1]); reader.onerror = e => r(e); }); }
-
+function startVoiceRecognition() { const SR = window.SpeechRecognition || window.webkitSpeechRecognition; if (!SR) return alert("Not supported."); const r = new SR(); r.onresult = (e) => { elements.textLog.value = e.results[0][0].transcript; handleLog('text'); }; r.start(); }
 init();
