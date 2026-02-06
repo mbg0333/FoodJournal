@@ -10,9 +10,11 @@ import { analyzeFood } from './lib/gemini';
 
 // Initialize State
 let currentUser = null;
-let currentTempMeal = null;
+let currentTempMeal = null; // Used for both new and editing
+let currentDate = new Date().toISOString().split('T')[0];
 let currentSettings = {
   geminiKey: localStorage.getItem('gemini_key') || '',
+  calGoal: 2000,
   startWeight: 0,
   goalWeight: 0,
   currentWeight: 0
@@ -41,6 +43,8 @@ const elements = {
   currentWeightDisplay: document.getElementById('current-weight'),
   goalWeightDisplay: document.getElementById('goal-weight'),
   apiKeyInput: document.getElementById('api-key'),
+  calGoalInput: document.getElementById('cal-goal-input'),
+  proteinSuggest: document.getElementById('suggested-protein-val'),
   startWeightInput: document.getElementById('start-weight-input'),
   goalWeightInput: document.getElementById('goal-weight-input'),
   currentWeightInput: document.getElementById('current-weight-input'),
@@ -50,18 +54,32 @@ const elements = {
     shopping: document.getElementById('shopping-view'),
     stats: document.getElementById('stats-view')
   },
-  // Confirm Modal Elements
+  // Date Nav
+  prevDay: document.getElementById('prev-day'),
+  nextDay: document.getElementById('next-day'),
+  dateDisplay: document.getElementById('current-date-display'),
+  // Summary
+  totalCals: document.getElementById('total-calories'),
+  goalCals: document.getElementById('goal-calories-display'),
+  totalPro: document.getElementById('total-protein'),
+  goalPro: document.getElementById('goal-protein-display'),
+  calBar: document.getElementById('cal-progress-bar'),
+  proBar: document.getElementById('pro-progress-bar'),
+  // Confirm/Edit Modal
   confirmModal: document.getElementById('confirm-modal'),
   confirmTitle: document.getElementById('confirm-title'),
+  confirmName: document.getElementById('confirm-name'),
   confirmCalories: document.getElementById('confirm-calories'),
   confirmProtein: document.getElementById('confirm-protein'),
   confirmCarbs: document.getElementById('confirm-carbs'),
   confirmFat: document.getElementById('confirm-fat'),
+  servingContainer: document.getElementById('serving-container'),
   servingSlider: document.getElementById('serving-slider'),
   servingLabel: document.getElementById('serving-label'),
   confirmCategory: document.getElementById('confirm-category'),
   saveConfirm: document.getElementById('save-confirm'),
-  cancelConfirm: document.getElementById('cancel-confirm')
+  cancelConfirm: document.getElementById('cancel-confirm'),
+  deleteBtn: document.getElementById('delete-btn')
 };
 
 // Initialize App
@@ -92,6 +110,10 @@ function setupEventListeners() {
 
   elements.logoutBtn.addEventListener('click', () => signOut(auth));
 
+  // Date Nav
+  elements.prevDay.addEventListener('click', () => changeDate(-1));
+  elements.nextDay.addEventListener('click', () => changeDate(1));
+
   // Navigation
   elements.navItems.forEach(item => {
     item.addEventListener('click', (e) => {
@@ -104,11 +126,16 @@ function setupEventListeners() {
   // Settings
   elements.settingsBtn.addEventListener('click', () => {
     elements.apiKeyInput.value = currentSettings.geminiKey || '';
+    elements.calGoalInput.value = currentSettings.calGoal || '';
     elements.startWeightInput.value = currentSettings.startWeight || '';
     elements.goalWeightInput.value = currentSettings.goalWeight || '';
     elements.currentWeightInput.value = currentSettings.currentWeight || '';
+    updateSuggestedProtein();
     elements.settingsModal.style.display = 'flex';
   });
+
+  elements.calGoalInput.addEventListener('input', updateSuggestedProtein);
+  elements.currentWeightInput.addEventListener('input', updateSuggestedProtein);
 
   elements.closeSettingsBtn.addEventListener('click', () => {
     elements.settingsModal.style.display = 'none';
@@ -116,7 +143,9 @@ function setupEventListeners() {
 
   elements.saveSettingsBtn.addEventListener('click', async () => {
     const newSettings = {
+      ...currentSettings,
       geminiKey: elements.apiKeyInput.value.trim(),
+      calGoal: parseInt(elements.calGoalInput.value) || 2000,
       startWeight: parseFloat(elements.startWeightInput.value) || 0,
       goalWeight: parseFloat(elements.goalWeightInput.value) || 0,
       currentWeight: parseFloat(elements.currentWeightInput.value) || 0
@@ -127,7 +156,7 @@ function setupEventListeners() {
     localStorage.setItem('gemini_key', newSettings.geminiKey);
     currentSettings = newSettings;
     await updateDashboard();
-    checkAvailableModels(newSettings.geminiKey);
+    await renderMeals();
     showLoading(false);
     elements.settingsModal.style.display = 'none';
   });
@@ -142,7 +171,7 @@ function setupEventListeners() {
     if (e.key === 'Enter') handleLog('text');
   });
 
-  // Confirm Modal Listeners
+  // Modal Listeners
   elements.servingSlider.addEventListener('input', updateConfirmValues);
   
   elements.cancelConfirm.addEventListener('click', () => {
@@ -150,24 +179,42 @@ function setupEventListeners() {
     currentTempMeal = null;
   });
 
+  elements.deleteBtn.addEventListener('click', async () => {
+    if (!currentTempMeal?.id) return;
+    if (confirm('Delete this entry?')) {
+      showLoading(true);
+      await storage.deleteMeal(currentTempMeal.id);
+      await renderMeals();
+      showLoading(false);
+      elements.confirmModal.style.display = 'none';
+    }
+  });
+
   elements.saveConfirm.addEventListener('click', async () => {
     if (!currentTempMeal) return;
     
-    const multiplier = parseFloat(elements.servingSlider.value);
+    const isEdit = !!currentTempMeal.id;
+    const multiplier = isEdit ? 1 : parseFloat(elements.servingSlider.value);
+    
     const finalMeal = {
       ...currentTempMeal,
-      name: currentTempMeal.name,
-      calories: Math.round(currentTempMeal.calories * multiplier),
-      protein: Math.round(currentTempMeal.protein * multiplier),
-      carbs: Math.round(currentTempMeal.carbs * multiplier),
-      fat: Math.round(currentTempMeal.fat * multiplier),
+      name: elements.confirmName.value,
+      calories: parseInt(elements.confirmCalories.value),
+      protein: parseInt(elements.confirmProtein.value) || 0,
+      carbs: parseInt(elements.confirmCarbs.value) || 0,
+      fat: parseInt(elements.confirmFat.value) || 0,
       category: elements.confirmCategory.value,
-      servingMultiplier: multiplier,
-      timestamp: new Date().toISOString()
+      timestamp: currentTempMeal.timestamp || new Date().toISOString()
     };
+    // If it was a new record with multiplier, it's already multiplied in updateConfirmValues for visual.
+    // Wait, let's keep it simple: sliders only for NEW items. Edits are manual.
 
     showLoading(true);
-    await storage.addMeal(finalMeal);
+    if (isEdit) {
+      await storage.updateMeal(currentTempMeal.id, finalMeal);
+    } else {
+      await storage.addMeal(finalMeal);
+    }
     await renderMeals();
     showLoading(false);
     
@@ -177,26 +224,40 @@ function setupEventListeners() {
   });
 }
 
+function updateSuggestedProtein() {
+  const weight = parseFloat(elements.currentWeightInput.value) || 0;
+  // Suggested Protein: 1g per lb for active / 0.8g for normal
+  const suggested = Math.round(weight * 0.825);
+  elements.proteinSuggest.textContent = suggested || '--';
+}
+
+function changeDate(days) {
+  const date = new Date(currentDate + 'T12:00:00');
+  date.setDate(date.getDate() + days);
+  currentDate = date.toISOString().split('T')[0];
+  updateDateDisplay();
+  renderMeals();
+}
+
+function updateDateDisplay() {
+  const today = new Date().toISOString().split('T')[0];
+  if (currentDate === today) {
+    elements.dateDisplay.textContent = 'Today';
+  } else {
+    const d = new Date(currentDate + 'T12:00:00');
+    elements.dateDisplay.textContent = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  }
+}
+
 function updateConfirmValues() {
-  if (!currentTempMeal) return;
+  if (!currentTempMeal || currentTempMeal.id) return; // Slider only for fresh scans
   const multiplier = parseFloat(elements.servingSlider.value);
   elements.servingLabel.textContent = `${multiplier}x`;
   
-  elements.confirmCalories.value = Math.round(currentTempMeal.calories * multiplier);
-  elements.confirmProtein.value = Math.round(currentTempMeal.protein * multiplier);
-  elements.confirmCarbs.value = Math.round(currentTempMeal.carbs * multiplier);
-  elements.confirmFat.value = Math.round(currentTempMeal.fat * multiplier);
-}
-
-async function checkAvailableModels(key) {
-  if (!key) return;
-  try {
-    const resp = await fetch(`https://generativelanguage.googleapis.com/v1/models?key=${key}`);
-    const data = await resp.json();
-    if (data.models) {
-      console.log("Available Models:", data.models.map(m => m.name.split("/").pop()));
-    }
-  } catch (e) {}
+  elements.confirmCalories.value = Math.round(currentTempMeal.rawCalories * multiplier);
+  elements.confirmProtein.value = Math.round(currentTempMeal.rawProtein * multiplier);
+  elements.confirmCarbs.value = Math.round(currentTempMeal.rawCarbs * multiplier);
+  elements.confirmFat.value = Math.round(currentTempMeal.rawFat * multiplier);
 }
 
 async function loadUserData() {
@@ -208,15 +269,16 @@ async function loadUserData() {
     
     currentSettings = {
       geminiKey: settings.geminiKey || localStorage.getItem('gemini_key') || envKey || '',
+      calGoal: settings.calGoal || 2000,
       startWeight: settings.startWeight || 0,
       goalWeight: settings.goalWeight || 0,
       currentWeight: settings.currentWeight || 0
     };
     
+    updateDateDisplay();
     await updateDashboard();
     await renderMeals();
     await renderShoppingList();
-    if (currentSettings.geminiKey) checkAvailableModels(currentSettings.geminiKey);
   } catch (e) {
     console.error("Error loading user data:", e);
   } finally {
@@ -252,8 +314,15 @@ async function handleLog(type, data = null) {
 
     const result = await analyzeFood(key, input, type);
     if (result) {
-      currentTempMeal = result;
-      openConfirmModal(result);
+      // Store raw values for slider scaling
+      currentTempMeal = {
+        ...result,
+        rawCalories: result.calories,
+        rawProtein: result.protein || 0,
+        rawCarbs: result.carbs || 0,
+        rawFat: result.fat || 0
+      };
+      openConfirmModal(currentTempMeal, false);
     } else {
       alert('AI analysis failed. Try again.');
     }
@@ -265,15 +334,22 @@ async function handleLog(type, data = null) {
   }
 }
 
-function openConfirmModal(meal) {
-  elements.confirmTitle.textContent = `Confirm: ${meal.name}`;
+function openConfirmModal(meal, isEdit = false) {
+  elements.confirmTitle.textContent = isEdit ? 'Edit Entry' : `Confirm: ${meal.name}`;
+  elements.confirmName.value = meal.name;
   elements.confirmCalories.value = meal.calories;
   elements.confirmProtein.value = meal.protein || 0;
   elements.confirmCarbs.value = meal.carbs || 0;
   elements.confirmFat.value = meal.fat || 0;
   elements.confirmCategory.value = meal.category || 'Lunch';
-  elements.servingSlider.value = 1;
-  elements.servingLabel.textContent = '1x';
+  
+  elements.deleteBtn.style.display = isEdit ? 'flex' : 'none';
+  elements.servingContainer.style.display = isEdit ? 'none' : 'block';
+  
+  if (!isEdit) {
+    elements.servingSlider.value = 1;
+    elements.servingLabel.textContent = '1x';
+  }
   
   elements.confirmModal.style.display = 'flex';
 }
@@ -311,22 +387,62 @@ function startVoiceRecognition() {
 
 async function renderMeals() {
   if (!currentUser) return;
-  const meals = await storage.getMeals();
-  elements.mealList.innerHTML = meals.map(meal => `
-    <div class="meal-item glass">
-      <div class="meal-icon">🍱</div>
-      <div class="meal-info">
-        <span class="meal-name">${meal.name}</span>
-        <span class="meal-meta">${meal.calories} kcal • ${meal.category}</span>
-        <div class="macro-chips">
-          <span class="chip protein">P: ${meal.protein || 0}g</span>
-          <span class="chip carbs">C: ${meal.carbs || 0}g</span>
-          <span class="chip fat">F: ${meal.fat || 0}g</span>
+  const meals = await storage.getMeals(currentDate);
+  
+  // Calculate Totals
+  let totalCals = 0;
+  let totalPro = 0;
+  
+  elements.mealList.innerHTML = meals.map(meal => {
+    totalCals += (meal.calories || 0);
+    totalPro += (meal.protein || 0);
+    
+    return `
+      <div class="meal-item glass" data-id="${meal.id}">
+        <div class="meal-icon">🍱</div>
+        <div class="meal-info">
+          <span class="meal-name">${meal.name}</span>
+          <span class="meal-meta">${meal.calories} kcal • ${meal.category}</span>
+          <div class="macro-chips">
+            <span class="chip protein">P: ${meal.protein || 0}g</span>
+            <span class="chip carbs">C: ${meal.carbs || 0}g</span>
+            <span class="chip fat">F: ${meal.fat || 0}g</span>
+          </div>
         </div>
+        ${meal.restaurant && meal.restaurant !== "" ? `<span class="meal-type">${meal.restaurant}</span>` : ''}
       </div>
-      ${meal.restaurant ? `<span class="meal-type">${meal.restaurant}</span>` : ''}
-    </div>
-  `).join('');
+    `;
+  }).join('');
+
+  // Add Click Listeners for Editing
+  document.querySelectorAll('.meal-item').forEach(el => {
+    el.addEventListener('click', () => {
+      const id = el.dataset.id;
+      const meal = meals.find(m => m.id === id);
+      if (meal) {
+        currentTempMeal = meal;
+        openConfirmModal(meal, true);
+      }
+    });
+  });
+
+  updateSummary(totalCals, totalPro);
+}
+
+function updateSummary(cals, pro) {
+  const calGoal = currentSettings.calGoal || 2000;
+  const proGoal = Math.round(currentSettings.currentWeight * 0.825) || 150;
+
+  elements.totalCals.textContent = cals;
+  elements.goalCals.textContent = calGoal;
+  elements.totalPro.textContent = pro;
+  elements.goalPro.textContent = proGoal;
+
+  const calPerc = Math.min(100, (cals / calGoal) * 100);
+  const proPerc = Math.min(100, (pro / proGoal) * 100);
+
+  elements.calBar.style.width = `${calPerc}%`;
+  elements.proBar.style.width = `${proPerc}%`;
 }
 
 async function renderShoppingList() {
