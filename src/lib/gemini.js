@@ -1,7 +1,13 @@
 ﻿import { GoogleGenerativeAI } from "@google/generative-ai";
 
-export const analyzeFood = async (key, input, type, coords = null) => {
-  const genAI = new GoogleGenerativeAI(key);
+export const analyzeFood = async (key, input, type) => {
+  if (!key) {
+    console.error("Gemini Error: No API Key provided");
+    return null;
+  }
+
+  const genAI = new GoogleGenerativeAI(key.trim());
+  // Using gemini-1.5-flash as it is the most reliable for this use case
   const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
   let prompt = "";
@@ -34,7 +40,7 @@ export const analyzeFood = async (key, input, type, coords = null) => {
     const cleanText = text.replace(/```json|```/g, '').trim();
     return JSON.parse(cleanText);
   } catch (e) {
-    console.error("Gemini Error:", e);
+    console.error("Gemini Error Details:", e);
     return null;
   }
 };

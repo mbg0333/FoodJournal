@@ -11,7 +11,7 @@ import { analyzeFood } from './lib/gemini';
 // Initialize State
 let currentUser = null;
 let currentSettings = {
-  geminiKey: localStorage.getItem('gemini_key') || '',
+  geminiKey: localStorage.getItem('gemini_key') || import.meta.env.VITE_GEMINI_API_KEY || '',
   startWeight: 0,
   goalWeight: 0,
   currentWeight: 0
@@ -133,18 +133,23 @@ function setupEventListeners() {
 async function loadUserData() {
   if (!currentUser) return;
   showLoading(true);
-  const settings = await storage.getSettings();
-  currentSettings = {
-    geminiKey: localStorage.getItem('gemini_key') || settings.geminiKey || '',
-    startWeight: settings.startWeight || 0,
-    goalWeight: settings.goalWeight || 0,
-    currentWeight: settings.currentWeight || 0
-  };
-  
-  await updateDashboard();
-  await renderMeals();
-  await renderShoppingList();
-  showLoading(false);
+  try {
+    const settings = await storage.getSettings();
+    currentSettings = {
+      geminiKey: localStorage.getItem('gemini_key') || settings.geminiKey || import.meta.env.VITE_GEMINI_API_KEY || '',
+      startWeight: settings.startWeight || 0,
+      goalWeight: settings.goalWeight || 0,
+      currentWeight: settings.currentWeight || 0
+    };
+    
+    await updateDashboard();
+    await renderMeals();
+    await renderShoppingList();
+  } catch (e) {
+    console.error("Error loading user data:", e);
+  } finally {
+    showLoading(false);
+  }
 }
 
 function switchTab(tab) {
@@ -180,7 +185,7 @@ async function handleLog(type, data = null) {
       elements.textLog.value = '';
       await renderMeals();
     } else {
-      alert('AI analysis failed. Try again.');
+      alert('AI analysis failed. Check your API key or connection.');
     }
   } catch (e) {
     console.error(e);
@@ -248,19 +253,14 @@ async function renderShoppingList() {
 }
 
 async function updateDashboard() {
-  elements.currentWeightDisplay.textContent = `${currentSettings.currentWeight} lbs`;
-  elements.goalWeightDisplay.textContent = `${currentSettings.goalWeight} lbs`;
+  elements.currentWeightDisplay.textContent = `${currentSettings.currentWeight || '--'} lbs`;
+  elements.goalWeightDisplay.textContent = `${currentSettings.goalWeight || '--'} lbs`;
   
   if (currentSettings.goalWeight > 0 && currentSettings.startWeight > 0) {
-    // Progress calculation for weight loss:
-    // (Start - Current) / (Start - Goal) * 100
     const totalToLose = currentSettings.startWeight - currentSettings.goalWeight;
     const lostSoFar = currentSettings.startWeight - currentSettings.currentWeight;
     let progress = (lostSoFar / totalToLose) * 100;
-    
-    // Clamp between 0 and 100
     progress = Math.min(100, Math.max(0, progress));
-    
     elements.goalProgress.style.width = `${progress}%`;
   } else {
     elements.goalProgress.style.width = `0%`;
