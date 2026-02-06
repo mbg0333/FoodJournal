@@ -4,13 +4,13 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="./vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AI Food Journal v2.2</title>
+    <title>AI Food Journal v2.3</title>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
       @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap');
     </style>
-    <script type="module" crossorigin src="./assets/index-Bxffd1vz.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-DZZrLIKj.css">
+    <script type="module" crossorigin src="./assets/index-ByGJD88v.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-FUjEroxl.css">
   </head>
   <body>
     <div id="auth-screen" class="modal-overlay" style="display: flex; z-index: 10000;">
@@ -35,8 +35,29 @@
       </header>
 
       <div id="journal-view">
+        <!-- Date Navigation -->
+        <div class="date-nav glass">
+          <button id="prev-day" class="icon-sm"><i data-lucide="chevron-left"></i></button>
+          <div id="current-date-display" style="font-weight: 600; flex: 1; text-align: center;">Today</div>
+          <button id="next-day" class="icon-sm"><i data-lucide="chevron-right"></i></button>
+        </div>
+
+        <!-- Daily Summary Card -->
+        <div class="summary-card glass">
+          <div class="summary-item">
+            <div class="summary-label">Calories</div>
+            <div class="summary-value"><span id="total-calories">0</span> / <span id="goal-calories-display">0</span></div>
+            <div class="summary-progress"><div id="cal-progress-bar" style="width: 0%"></div></div>
+          </div>
+          <div class="summary-item">
+            <div class="summary-label">Protein</div>
+            <div class="summary-value"><span id="total-protein">0</span>g / <span id="goal-protein-display">0</span>g</div>
+            <div class="summary-progress"><div id="pro-progress-bar" style="width: 0%"></div></div>
+          </div>
+        </div>
+
         <div id="dashboard" class="dashboard-card glass">
-          <h3>Goal Tracker</h3>
+          <h3>Weight Tracker</h3>
           <div class="progress-container">
             <div id="goal-progress" class="progress-bar"></div>
           </div>
@@ -51,8 +72,6 @@
             </div>
           </div>
         </div>
-
-        <div class="quick-actions" id="quick-actions"></div>
 
         <div id="log-container" class="glass" style="padding: 20px; margin-bottom: 20px;">
           <h4 style="margin-bottom: 16px;">Log New Entry</h4>
@@ -96,32 +115,41 @@
         </a>
       </nav>
 
-      <!-- Confirmation Modal -->
+      <!-- Confirmation / Edit Modal -->
       <div id="confirm-modal" class="modal-overlay">
         <div class="modal-content glass">
-          <div class="modal-header" style="margin-bottom: 20px;">
+          <div class="modal-header" style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
             <h3 id="confirm-title">Confirm Entry</h3>
-          </div>
-          <div class="macro-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
-            <div class="input-group">
-              <label>Calories</label>
-              <input type="number" id="confirm-calories" readonly />
-            </div>
-            <div class="input-group">
-              <label>Protein (g)</label>
-              <input type="number" id="confirm-protein" readonly />
-            </div>
-            <div class="input-group">
-              <label>Carbs (g)</label>
-              <input type="number" id="confirm-carbs" readonly />
-            </div>
-            <div class="input-group">
-              <label>Fat (g)</label>
-              <input type="number" id="confirm-fat" readonly />
-            </div>
+            <button id="delete-btn" class="icon-sm" style="background: rgba(239, 68, 68, 0.2); color: #ef4444; display: none;">
+              <i data-lucide="trash-2"></i>
+            </button>
           </div>
           
           <div class="input-group" style="margin-bottom: 15px;">
+            <label>Food Name</label>
+            <input type="text" id="confirm-name" />
+          </div>
+
+          <div class="macro-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+            <div class="input-group">
+              <label>Calories</label>
+              <input type="number" id="confirm-calories" />
+            </div>
+            <div class="input-group">
+              <label>Protein (g)</label>
+              <input type="number" id="confirm-protein" />
+            </div>
+            <div class="input-group">
+              <label>Carbs (g)</label>
+              <input type="number" id="confirm-carbs" />
+            </div>
+            <div class="input-group">
+              <label>Fat (g)</label>
+              <input type="number" id="confirm-fat" />
+            </div>
+          </div>
+          
+          <div class="input-group" id="serving-container" style="margin-bottom: 15px;">
             <label>Serving Size (Multiplier)</label>
             <div style="display: flex; gap: 10px; align-items: center;">
               <input type="range" id="serving-slider" min="0.5" max="3" step="0.25" value="1" style="flex: 1;" />
@@ -141,7 +169,7 @@
 
           <div style="display: flex; gap: 10px;">
             <button id="cancel-confirm" class="glass" style="flex: 1;">Cancel</button>
-            <button id="save-confirm" class="primary" style="flex: 1;">Add to Journal</button>
+            <button id="save-confirm" class="primary" style="flex: 1;">Save</button>
           </div>
         </div>
       </div>
@@ -155,6 +183,13 @@
           <div class="input-group">
             <label>Gemini API Key</label>
             <input type="password" id="api-key" />
+          </div>
+          <div class="input-group">
+            <label>Daily Calorie Goal</label>
+            <input type="number" id="cal-goal-input" placeholder="e.g. 2000" />
+          </div>
+          <div id="suggested-protein" style="font-size: 0.85rem; color: var(--primary); margin-bottom: 20px;">
+            Suggested Protein: <span id="suggested-protein-val">--</span>g
           </div>
           <div class="input-group">
             <label>Starting Weight (lbs)</label>
