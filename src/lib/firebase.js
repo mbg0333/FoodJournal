@@ -2,17 +2,8 @@
 import { getFirestore } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 
-const key = (import.meta.env.VITE_FIREBASE_API_KEY || "").trim();
-
-// SAFE DEBUG: This logs the length and the ends of the key to catch mix-ups
-console.log("--- KEY CHECK ---");
-console.log("Length:", key.length);
-console.log("Starts with:", key.substring(0, 7));
-console.log("Ends with:", key.substring(key.length - 4));
-console.log("-----------------");
-
 const firebaseConfig = {
-  apiKey: key,
+  apiKey: (import.meta.env.VITE_FIREBASE_API_KEY || "").trim(),
   authDomain: (import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "").trim(),
   projectId: (import.meta.env.VITE_FIREBASE_PROJECT_ID || "").trim(),
   storageBucket: (import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "").trim(),
