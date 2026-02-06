@@ -16,7 +16,8 @@ import {
 const COLLECTIONS = {
   SETTINGS: 'settings',
   MEALS: 'meals',
-  SHOPPING: 'shopping'
+  SHOPPING: 'shopping',
+  WATER: 'water'
 };
 
 export const storage = {
@@ -36,8 +37,6 @@ export const storage = {
   getMeals: async (dateStr) => {
     const user = auth.currentUser;
     if (!user) return [];
-    
-    // We filter by date by checking if the timestamp starts with the date string (YYYY-MM-DD)
     const q = query(
       collection(db, COLLECTIONS.MEALS), 
       where('userId', '==', user.uid),
@@ -45,10 +44,7 @@ export const storage = {
     );
     const snap = await getDocs(q);
     const meals = snap.docs.map(d => ({ ...d.data(), id: d.id }));
-    
-    if (dateStr) {
-      return meals.filter(m => m.timestamp.startsWith(dateStr));
-    }
+    if (dateStr) return meals.filter(m => m.timestamp.startsWith(dateStr));
     return meals;
   },
 
@@ -71,6 +67,34 @@ export const storage = {
     const user = auth.currentUser;
     if (!user) return;
     await deleteDoc(doc(db, COLLECTIONS.MEALS, id));
+  },
+
+  // Water Tracking
+  getWater: async (dateStr) => {
+    const user = auth.currentUser;
+    if (!user) return 0;
+    const q = query(
+      collection(db, COLLECTIONS.WATER),
+      where('userId', '==', user.uid),
+      where('date', '==', dateStr)
+    );
+    const snap = await getDocs(q);
+    if (!snap.empty) {
+      return snap.docs[0].data().amount || 0;
+    }
+    return 0;
+  },
+
+  setWater: async (dateStr, amount) => {
+    const user = auth.currentUser;
+    if (!user) return;
+    const docId = `${user.uid}_${dateStr}`;
+    await setDoc(doc(db, COLLECTIONS.WATER, docId), {
+      userId: user.uid,
+      date: dateStr,
+      amount: amount,
+      timestamp: new Date().toISOString()
+    });
   },
 
   getShoppingList: async () => {

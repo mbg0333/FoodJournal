@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AI Food Journal v2.3</title>
+    <title>AI Food Journal v2.5</title>
     <link rel="stylesheet" href="/src/style.css" />
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
@@ -33,6 +33,7 @@
         </div>
       </header>
 
+      <!-- TAB 1: JOURNAL -->
       <div id="journal-view">
         <!-- Date Navigation -->
         <div class="date-nav glass">
@@ -55,25 +56,30 @@
           </div>
         </div>
 
-        <div id="dashboard" class="dashboard-card glass">
-          <h3>Weight Tracker</h3>
-          <div class="progress-container">
-            <div id="goal-progress" class="progress-bar"></div>
+        <!-- Water Tracker Card -->
+        <div class="water-card glass">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <i data-lucide="droplets" style="color: #60a5fa;"></i>
+              <h3 style="font-size: 1rem;">Water</h3>
+            </div>
+            <div style="font-size: 0.9rem; font-weight: 600;">
+              <span id="current-water">0</span> / <span id="goal-water">0</span> oz
+            </div>
           </div>
-          <div class="stats-grid">
-            <div class="stat-item">
-              <span id="current-weight" class="stat-value">--</span>
-              <span class="stat-label">Current</span>
-            </div>
-            <div class="stat-item">
-              <span id="goal-weight" class="stat-value">--</span>
-              <span class="stat-label">Goal</span>
-            </div>
+          <div class="water-progress-outer">
+            <div id="water-progress-bar" class="water-progress-inner"></div>
+          </div>
+          <div style="display: flex; gap: 8px; margin-top: 12px;">
+            <button class="glass water-btn" data-amt="8">+ 8oz</button>
+            <button class="glass water-btn" data-amt="16">+ 16oz</button>
+            <button class="glass water-btn" data-amt="32">+ 32oz</button>
+            <button id="reset-water" class="glass icon-sm" style="margin-left: auto;"><i data-lucide="refresh-cw"></i></button>
           </div>
         </div>
 
         <div id="log-container" class="glass" style="padding: 20px; margin-bottom: 20px;">
-          <h4 style="margin-bottom: 16px;">Log New Entry</h4>
+          <h4 style="margin-bottom: 16px;">Log Food</h4>
           <div style="display: flex; gap: 10px; margin-bottom: 20px;">
             <button id="voice-btn" class="icon glass" title="Voice Log"><i data-lucide="mic"></i></button>
             <button id="photo-btn" class="icon glass" title="Photo Log"><i data-lucide="camera"></i></button>
@@ -84,19 +90,37 @@
           <div id="voice-status" style="display: none; color: var(--primary); margin-bottom: 10px;">Listening...</div>
         </div>
 
-        <div class="meal-list" id="meal-list"></div>
+        <!-- Categorized Expandable Sections -->
+        <div id="categorized-meals" class="category-container"></div>
       </div>
 
+      <!-- TAB 2: WEIGHT TRACKER -->
+      <div id="weight-view" style="display: none;">
+        <div class="dashboard-card glass">
+          <h2 class="gradient-text">Weight Progress</h2>
+          <div class="progress-container" style="height: 20px; border-radius: 10px;">
+            <div id="goal-progress" class="progress-bar"></div>
+          </div>
+          <div class="stats-grid">
+            <div class="stat-item">
+              <span id="current-weight" class="stat-value" style="font-size: 2rem;">--</span>
+              <span class="stat-label">Current</span>
+            </div>
+            <div class="stat-item">
+              <span id="goal-weight" class="stat-value" style="font-size: 2rem;">--</span>
+              <span class="stat-label">Goal</span>
+            </div>
+          </div>
+          <div style="margin-top: 30px; text-align: center;">
+             <p style="color: var(--text-dim); font-size: 0.9rem;">To update your current weight, go to Settings.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 3: SHOPPING -->
       <div id="shopping-view" style="display: none;">
         <h3>Shopping List</h3>
         <div id="shopping-list" class="meal-list"></div>
-      </div>
-
-      <div id="stats-view" style="display: none;">
-        <h3>Progress History</h3>
-        <div class="glass" style="padding: 20px; margin-top: 20px;">
-          <p>Coming soon...</p>
-        </div>
       </div>
 
       <nav class="bottom-nav">
@@ -104,13 +128,13 @@
           <i data-lucide="book-open"></i>
           <span>Journal</span>
         </a>
+        <a href="#" class="nav-item" data-tab="weight">
+          <i data-lucide="scale"></i>
+          <span>Weight</span>
+        </a>
         <a href="#" class="nav-item" data-tab="shopping">
           <i data-lucide="shopping-bag"></i>
           <span>Shopping</span>
-        </a>
-        <a href="#" class="nav-item" data-tab="stats">
-          <i data-lucide="bar-chart-2"></i>
-          <span>Progress</span>
         </a>
       </nav>
 
@@ -123,12 +147,10 @@
               <i data-lucide="trash-2"></i>
             </button>
           </div>
-          
           <div class="input-group" style="margin-bottom: 15px;">
             <label>Food Name</label>
             <input type="text" id="confirm-name" />
           </div>
-
           <div class="macro-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
             <div class="input-group">
               <label>Calories</label>
@@ -147,25 +169,22 @@
               <input type="number" id="confirm-fat" />
             </div>
           </div>
-          
           <div class="input-group" id="serving-container" style="margin-bottom: 15px;">
-            <label>Serving Size (Multiplier)</label>
+            <label>Serving Multiplier</label>
             <div style="display: flex; gap: 10px; align-items: center;">
               <input type="range" id="serving-slider" min="0.5" max="3" step="0.25" value="1" style="flex: 1;" />
               <span id="serving-label" style="font-weight: 600; min-width: 40px;">1x</span>
             </div>
           </div>
-
           <div class="input-group" style="margin-bottom: 20px;">
             <label>Category</label>
-            <select id="confirm-category" class="glass" style="width: 100%; padding: 10px; color: white; border: 1px solid rgba(255,255,255,0.1);">
+            <select id="confirm-category" class="glass">
               <option value="Breakfast">Breakfast</option>
               <option value="Lunch">Lunch</option>
               <option value="Dinner">Dinner</option>
               <option value="Snack">Snack</option>
             </select>
           </div>
-
           <div style="display: flex; gap: 10px;">
             <button id="cancel-confirm" class="glass" style="flex: 1;">Cancel</button>
             <button id="save-confirm" class="primary" style="flex: 1;">Save</button>
@@ -179,42 +198,21 @@
             <h3>Settings</h3>
             <button id="close-settings" class="icon" style="background:none;"><i data-lucide="x"></i></button>
           </div>
-          <div class="input-group">
-            <label>Gemini API Key</label>
-            <input type="password" id="api-key" />
-          </div>
-          <div class="input-group">
-            <label>Daily Calorie Goal</label>
-            <input type="number" id="cal-goal-input" placeholder="e.g. 2000" />
-          </div>
-          <div id="suggested-protein" style="font-size: 0.85rem; color: var(--primary); margin-bottom: 20px;">
-            Suggested Protein: <span id="suggested-protein-val">--</span>g
-          </div>
-          <div class="input-group">
-            <label>Starting Weight (lbs)</label>
-            <input type="number" id="start-weight-input" />
-          </div>
-          <div class="input-group">
-            <label>Goal Weight (lbs)</label>
-            <input type="number" id="goal-weight-input" />
-          </div>
-          <div class="input-group">
-            <label>Current Weight (lbs)</label>
-            <input type="number" id="current-weight-input" />
-          </div>
+          <div class="input-group"><label>Gemini API Key</label><input type="password" id="api-key" /></div>
+          <div class="input-group"><label>Daily Calorie Goal</label><input type="number" id="cal-goal-input" /></div>
+          <div id="suggested-protein" style="font-size: 0.85rem; color: var(--primary); margin-bottom: 8px;">Suggested Protein: <span id="suggested-protein-val">--</span>g</div>
+          <div id="suggested-water" style="font-size: 0.85rem; color: #60a5fa; margin-bottom: 20px;">Suggested Water: <span id="suggested-water-val">--</span> oz</div>
+          <div class="input-group"><label>Starting Weight (lbs)</label><input type="number" id="start-weight-input" /></div>
+          <div class="input-group"><label>Goal Weight (lbs)</label><input type="number" id="goal-weight-input" /></div>
+          <div class="input-group"><label>Current Weight (lbs)</label><input type="number" id="current-weight-input" /></div>
           <button id="save-settings" class="primary" style="width:100%;">Save Changes</button>
         </div>
       </div>
 
       <div id="loading-overlay" class="modal-overlay">
-        <div class="loading-wave">
-          <div class="wave-dot"></div>
-          <div class="wave-dot"></div>
-          <div class="wave-dot"></div>
-        </div>
+        <div class="loading-wave"><div class="wave-dot"></div><div class="wave-dot"></div><div class="wave-dot"></div></div>
       </div>
     </div>
-
-    <script type="module" src="/src/main.js?v=2.3"></script>
+    <script type="module" src="/src/main.js?v=2.5"></script>
   </body>
 </html>
