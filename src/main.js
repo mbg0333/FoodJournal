@@ -11,7 +11,7 @@ import { analyzeFood } from './lib/gemini';
 // Initialize State
 let currentUser = null;
 let currentSettings = {
-  geminiKey: localStorage.getItem('gemini_key') || import.meta.env.VITE_GEMINI_API_KEY || '',
+  geminiKey: localStorage.getItem('gemini_key') || '',
   startWeight: 0,
   goalWeight: 0,
   currentWeight: 0
@@ -103,7 +103,7 @@ function setupEventListeners() {
 
   elements.saveSettingsBtn.addEventListener('click', async () => {
     const newSettings = {
-      geminiKey: elements.apiKeyInput.value,
+      geminiKey: elements.apiKeyInput.value.trim(),
       startWeight: parseFloat(elements.startWeightInput.value) || 0,
       goalWeight: parseFloat(elements.goalWeightInput.value) || 0,
       currentWeight: parseFloat(elements.currentWeightInput.value) || 0
@@ -124,7 +124,6 @@ function setupEventListeners() {
   elements.photoBtn.addEventListener('click', () => elements.fileInput.click());
   elements.fileInput.addEventListener('change', (e) => handleLog('photo', e.target.files[0]));
   
-  // Enter key for text log
   elements.textLog.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') handleLog('text');
   });
@@ -135,12 +134,16 @@ async function loadUserData() {
   showLoading(true);
   try {
     const settings = await storage.getSettings();
+    const envKey = import.meta.env.VITE_GEMINI_API_KEY;
+    
     currentSettings = {
-      geminiKey: localStorage.getItem('gemini_key') || settings.geminiKey || import.meta.env.VITE_GEMINI_API_KEY || '',
+      geminiKey: settings.geminiKey || localStorage.getItem('gemini_key') || envKey || '',
       startWeight: settings.startWeight || 0,
       goalWeight: settings.goalWeight || 0,
       currentWeight: settings.currentWeight || 0
     };
+    
+    console.log("Gemini Key Status:", currentSettings.geminiKey ? "Loaded ✅" : "Missing ❌");
     
     await updateDashboard();
     await renderMeals();
@@ -165,7 +168,7 @@ async function handleLog(type, data = null) {
   const key = currentSettings.geminiKey;
   if (!key) {
     alert('Please add a Gemini API Key in Settings first.');
-    elements.settingsBtn.click();
+    elements.settingsModal.style.display = 'flex';
     return;
   }
 
@@ -174,7 +177,6 @@ async function handleLog(type, data = null) {
     let input = type === 'text' ? elements.textLog.value : data;
     if (type === 'text' && !input) return;
 
-    // Convert image to base64 if it's a photo
     if (type === 'photo' && data) {
       input = await toBase64(data);
     }
@@ -259,7 +261,7 @@ async function updateDashboard() {
   if (currentSettings.goalWeight > 0 && currentSettings.startWeight > 0) {
     const totalToLose = currentSettings.startWeight - currentSettings.goalWeight;
     const lostSoFar = currentSettings.startWeight - currentSettings.currentWeight;
-    let progress = (lostSoFar / totalToLose) * 100;
+    let progress = totalToLose > 0 ? (lostSoFar / totalToLose) * 100 : 0;
     progress = Math.min(100, Math.max(0, progress));
     elements.goalProgress.style.width = `${progress}%`;
   } else {
