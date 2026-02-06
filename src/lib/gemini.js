@@ -4,7 +4,7 @@ export const analyzeFood = async (key, input, type) => {
   if (!key) return null;
   const genAI = new GoogleGenerativeAI(key.trim());
   
-  const modelsToTry = ["gemini-2.0-flash", "gemini-2.0-flash-lite", "gemini-1.5-flash"];
+  const modelsToTry = ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-flash-8b"];
   
   for (const modelName of modelsToTry) {
     try {
@@ -33,10 +33,18 @@ export const analyzeFood = async (key, input, type) => {
          return JSON.parse(jsonMatch[0]);
       }
     } catch (e) {
+      
+      if (e.message.includes("403") || e.message.includes("400") || e.message.includes("API_KEY_INVALID") || e.message.includes("expired")) {
+        console.error("CRITICAL: API Key Error!", e.message);
+        alert("Gemini API Key Error: Your key has likely expired or been revoked. Please update it in Settings (??).");
+        return null;
+      }
       console.warn(`[POST-ENTRY] ${modelName} skipped.`, e.message);
+
     }
   }
   return null;
 };
+
 
 
