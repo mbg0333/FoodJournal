@@ -12,6 +12,7 @@ import { analyzeFood } from './lib/gemini';
 let currentUser = null;
 let currentSettings = {
   geminiKey: localStorage.getItem('gemini_key') || '',
+  startWeight: 0,
   goalWeight: 0,
   currentWeight: 0
 };
@@ -39,6 +40,7 @@ const elements = {
   currentWeightDisplay: document.getElementById('current-weight'),
   goalWeightDisplay: document.getElementById('goal-weight'),
   apiKeyInput: document.getElementById('api-key'),
+  startWeightInput: document.getElementById('start-weight-input'),
   goalWeightInput: document.getElementById('goal-weight-input'),
   currentWeightInput: document.getElementById('current-weight-input'),
   navItems: document.querySelectorAll('.nav-item'),
@@ -89,6 +91,7 @@ function setupEventListeners() {
   // Settings
   elements.settingsBtn.addEventListener('click', () => {
     elements.apiKeyInput.value = currentSettings.geminiKey || '';
+    elements.startWeightInput.value = currentSettings.startWeight || '';
     elements.goalWeightInput.value = currentSettings.goalWeight || '';
     elements.currentWeightInput.value = currentSettings.currentWeight || '';
     elements.settingsModal.style.display = 'flex';
@@ -101,6 +104,7 @@ function setupEventListeners() {
   elements.saveSettingsBtn.addEventListener('click', async () => {
     const newSettings = {
       geminiKey: elements.apiKeyInput.value,
+      startWeight: parseFloat(elements.startWeightInput.value) || 0,
       goalWeight: parseFloat(elements.goalWeightInput.value) || 0,
       currentWeight: parseFloat(elements.currentWeightInput.value) || 0
     };
@@ -132,6 +136,7 @@ async function loadUserData() {
   const settings = await storage.getSettings();
   currentSettings = {
     geminiKey: localStorage.getItem('gemini_key') || settings.geminiKey || '',
+    startWeight: settings.startWeight || 0,
     goalWeight: settings.goalWeight || 0,
     currentWeight: settings.currentWeight || 0
   };
@@ -243,12 +248,22 @@ async function renderShoppingList() {
 }
 
 async function updateDashboard() {
-  elements.currentWeightDisplay.textContent = `${currentSettings.currentWeight}kg`;
-  elements.goalWeightDisplay.textContent = `${currentSettings.goalWeight}kg`;
+  elements.currentWeightDisplay.textContent = `${currentSettings.currentWeight} lbs`;
+  elements.goalWeightDisplay.textContent = `${currentSettings.goalWeight} lbs`;
   
-  if (currentSettings.goalWeight > 0) {
-    const progress = Math.min(100, Math.max(0, (currentSettings.currentWeight / currentSettings.goalWeight) * 100));
+  if (currentSettings.goalWeight > 0 && currentSettings.startWeight > 0) {
+    // Progress calculation for weight loss:
+    // (Start - Current) / (Start - Goal) * 100
+    const totalToLose = currentSettings.startWeight - currentSettings.goalWeight;
+    const lostSoFar = currentSettings.startWeight - currentSettings.currentWeight;
+    let progress = (lostSoFar / totalToLose) * 100;
+    
+    // Clamp between 0 and 100
+    progress = Math.min(100, Math.max(0, progress));
+    
     elements.goalProgress.style.width = `${progress}%`;
+  } else {
+    elements.goalProgress.style.width = `0%`;
   }
 }
 
