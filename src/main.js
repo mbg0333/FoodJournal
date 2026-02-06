@@ -114,6 +114,8 @@ function setupEventListeners() {
     localStorage.setItem('gemini_key', newSettings.geminiKey);
     currentSettings = newSettings;
     await updateDashboard();
+    // Re-check models with new key
+    await checkAvailableModels(newSettings.geminiKey);
     showLoading(false);
     elements.settingsModal.style.display = 'none';
   });
@@ -127,6 +129,24 @@ function setupEventListeners() {
   elements.textLog.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') handleLog('text');
   });
+}
+
+async function checkAvailableModels(key) {
+  if (!key) return;
+  try {
+    console.log("AI: Scanning for available models...");
+    const resp = await fetch(`https://generativelanguage.googleapis.com/v1/models?key=${key}`);
+    const data = await resp.json();
+    if (data.models) {
+      console.log("-- AVAILABLE MODELS --");
+      console.log(data.models.map(m => m.name.split('/').pop()));
+      console.log("----------------------");
+    } else {
+      console.warn("AI: Could not list models (Stable v1). Key might be brand new.");
+    }
+  } catch (e) {
+    console.warn("AI: Model scan failed.");
+  }
 }
 
 async function loadUserData() {
@@ -145,11 +165,12 @@ async function loadUserData() {
     
     const key = currentSettings.geminiKey || "";
     console.log("--- GEMINI KEY CHECK ---");
-    console.log("Status:", key ? "Loaded ✅" : "Missing ❌");
-    console.log("Key starts with:", key.substring(0, 7));
-    console.log("Key ends with:", key.substring(key.length - 4));
-    console.log("TIP: Should start with AIzaSyB and end with v8Hg");
+    console.log("Status:", key ? "Key Detected ✅" : "No Key Found ❌");
+    console.log("Prefix:", key.substring(0, 7));
+    console.log("Suffix:", key.substring(key.length - 4));
     console.log("-----------------------");
+    
+    if (key) await checkAvailableModels(key);
     
     await updateDashboard();
     await renderMeals();
@@ -193,7 +214,7 @@ async function handleLog(type, data = null) {
       elements.textLog.value = '';
       await renderMeals();
     } else {
-      alert('AI analysis failed. Check your API key in Settings.');
+      alert('AI analysis failed. Check Console for the "AVAILABLE MODELS" list.');
     }
   } catch (e) {
     console.error(e);
