@@ -293,7 +293,7 @@ function buildMealFromForm() {
 }
 
 async function handleLog(type, data = null) {
-  if (!currentSettings.geminiKey) return alert("API Key missing");
+  
   showLoading(true);
   try {
     let input = type === "text" ? elements.textLog.value.trim() : data;
@@ -304,6 +304,7 @@ async function handleLog(type, data = null) {
     let res = null;
 
     if (type === "text" && upcRegex.test(input)) {
+        console.log("Stage 1: Checking Barcode Databases...");
         console.log("Checking UPC:", input);
         
         // 1. OpenFoodFacts
@@ -312,6 +313,7 @@ async function handleLog(type, data = null) {
 
         // 2. FatSecret
         if (!res) {
+        console.log("Stage 2: Barcode lookup failed. Falling back to AI Search...");
             console.log("Checking FatSecret...");
             try { res = await searchFatSecretUPC(input); } catch(e) { console.error(e); }
             if (res) console.log("Found in FatSecret");
@@ -320,9 +322,11 @@ async function handleLog(type, data = null) {
 
     // 3. AI Fallback
     if (!res) {
-        res = await analyzeFood(currentSettings.geminiKey, input, type);
+        console.log("Stage 2: Barcode lookup failed. Falling back to AI Search...");
+        if (currentSettings.geminiKey) res = await analyzeFood(currentSettings.geminiKey, input, type);
     }
 
+    if (!res && !currentSettings.geminiKey) alert("Product not found in database and AI is disabled (API Key missing).");
     if (res && typeof res === "object") {
       if (Array.isArray(res) && res.length > 1) {
         showSearchResultsModal(res);
@@ -396,6 +400,7 @@ async function handleAiWebSearch() {
   showLoading(true);
   try {
     const res = await analyzeFood(currentSettings.geminiKey, q, 'text'); // Uses existing analyzeFood for web results
+    if (!res && !currentSettings.geminiKey) alert("Product not found in database and AI is disabled (API Key missing).");
     if (res && typeof res === "object") {
       currentTempMeal = { ...res, stockPhoto: `https://source.unsplash.com/featured/?${encodeURIComponent(res.photoSearchQuery || res.name)},food` };
       openConfirmModal(currentTempMeal, false);
