@@ -4,12 +4,12 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="./vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>AI Food Journal v2.9.8</title>
+    <title>AI Food Journal v2.9.9</title>
     <style>
       @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap');
     </style>
-    <script type="module" crossorigin src="./assets/index-L9cHN_KE.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-C2EbOV4O.css">
+    <script type="module" crossorigin src="./assets/index-aSW4QKql.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-CnM6zvVR.css">
   </head>
   <body>
     <!-- Auth Screen -->
@@ -85,6 +85,7 @@
           <div style="display: flex; gap: 10px;">
             <button id="voice-btn" class="icon glass"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="22"></line></svg></button>
             <button id="photo-btn" class="icon glass"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg></button>
+            <button id="log-search-btn" class="icon glass"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></button>
             <button id="open-favs-log-btn" class="glass" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px;">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg> FAVS
             </button>
@@ -159,14 +160,31 @@
         </a>
       </nav>
 
-      <!-- Search Modal -->
+            <!-- Search Modal -->
       <div id="search-modal" class="modal-overlay">
-        <div class="modal-content glass">
-          <div class="search-header" style="margin-bottom: 20px;">
-            <input type="text" id="global-search-input" placeholder="Search history..." />
+        <div class="modal-content glass" style="max-width: 450px;">
+          <div class="modal-header" style="margin-bottom: 20px;">
+            <h3 class="gradient-text">Find Food</h3>
           </div>
-          <div id="search-results" style="max-height: 400px; overflow-y: auto;"></div>
-          <button id="close-search" class="glass" style="width: 100%; margin-top: 15px;">Close</button>
+          <div class="search-header" style="margin-bottom: 15px;">
+            <input type="text" id="global-search-input" placeholder="Search history or type for AI..." />
+          </div>
+          
+          <div id="search-tabs" style="display: flex; gap: 10px; margin-bottom: 15px;">
+            <button id="search-tab-history" class="glass active-tab" style="flex: 1; padding: 8px; font-size: 0.8rem;">History</button>
+            <button id="search-tab-web" class="glass" style="flex: 1; padding: 8px; font-size: 0.8rem;">AI Web Search</button>
+          </div>
+
+          <div id="search-results" style="max-height: 350px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;">
+            <!-- Results populate here -->
+          </div>
+          
+          <div id="ai-search-prompt" style="display: none; text-align: center; padding: 20px;">
+            <p style="color: var(--text-dim); margin-bottom: 15px;">Click the button below to have Gemini find nutrition data from the web.</p>
+            <button id="trigger-ai-search" class="primary" style="width: 100%;">Search via AI</button>
+          </div>
+
+          <button id="close-search" class="glass" style="width: 100%; margin-top: 20px;">Close</button>
         </div>
       </div>
 
@@ -238,6 +256,7 @@
 
   </body>
 </html>
+
 
 
 
