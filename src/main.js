@@ -10,7 +10,7 @@ import { analyzeFood } from './lib/gemini';
 
 // Initialize State
 let currentUser = null;
-let currentTempMeal = null; // Used for both new and editing
+let currentTempMeal = null;
 let currentDate = new Date().toISOString().split('T')[0];
 let currentSettings = {
   geminiKey: localStorage.getItem('gemini_key') || '',
@@ -34,6 +34,7 @@ const elements = {
   voiceBtn: document.getElementById('voice-btn'),
   photoBtn: document.getElementById('photo-btn'),
   fileInput: document.getElementById('file-input'),
+  cameraInput: document.getElementById('camera-input'),
   textLog: document.getElementById('text-log'),
   shoppingList: document.getElementById('shopping-list'),
   loadingOverlay: document.getElementById('loading-overlay'),
@@ -73,6 +74,11 @@ const elements = {
   resetWater: document.getElementById('reset-water'),
   // Categorized List
   categorizedMeals: document.getElementById('categorized-meals'),
+  // Photo Modal
+  photoModal: document.getElementById('photo-modal'),
+  takePhotoBtn: document.getElementById('take-photo-btn'),
+  choosePhotoBtn: document.getElementById('choose-photo-btn'),
+  closePhotoModal: document.getElementById('close-photo-modal'),
   // Confirm/Edit Modal
   confirmModal: document.getElementById('confirm-modal'),
   confirmTitle: document.getElementById('confirm-title'),
@@ -121,6 +127,7 @@ function setupEventListeners() {
     });
   });
 
+  // Settings
   elements.settingsBtn.addEventListener('click', () => {
     elements.apiKeyInput.value = currentSettings.geminiKey || '';
     elements.calGoalInput.value = currentSettings.calGoal || '';
@@ -154,6 +161,7 @@ function setupEventListeners() {
     elements.settingsModal.style.display = 'none';
   });
 
+  // Water
   elements.waterBtns.forEach(btn => {
     btn.addEventListener('click', async () => {
       const amt = parseInt(btn.dataset.amt);
@@ -172,12 +180,30 @@ function setupEventListeners() {
     }
   });
 
+  // Logging Actions
   elements.logBtn.addEventListener('click', () => handleLog('text'));
   elements.voiceBtn.addEventListener('click', startVoiceRecognition);
-  elements.photoBtn.addEventListener('click', () => elements.fileInput.click());
+  
+  // Camera / Photo Choice
+  elements.photoBtn.addEventListener('click', () => elements.photoModal.style.display = 'flex');
+  elements.closePhotoModal.addEventListener('click', () => elements.photoModal.style.display = 'none');
+  
+  elements.takePhotoBtn.addEventListener('click', () => {
+    elements.photoModal.style.display = 'none';
+    elements.cameraInput.click();
+  });
+  
+  elements.choosePhotoBtn.addEventListener('click', () => {
+    elements.photoModal.style.display = 'none';
+    elements.fileInput.click();
+  });
+
   elements.fileInput.addEventListener('change', (e) => handleLog('photo', e.target.files[0]));
+  elements.cameraInput.addEventListener('change', (e) => handleLog('photo', e.target.files[0]));
+  
   elements.textLog.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleLog('text'); });
 
+  // Modal Listeners
   elements.servingSlider.addEventListener('input', updateConfirmValues);
   elements.cancelConfirm.addEventListener('click', () => { elements.confirmModal.style.display = 'none'; currentTempMeal = null; });
 
@@ -264,11 +290,8 @@ async function loadUserData() {
     await updateDashboard();
     await renderJournal();
     await renderShoppingList();
-  } catch (e) {
-    console.error("Error loading user data:", e);
-  } finally {
-    showLoading(false);
-  }
+  } catch (e) { console.error(e); }
+  finally { showLoading(false); }
 }
 
 function switchTab(tab) {
@@ -318,19 +341,14 @@ async function renderJournal() {
   if (!currentUser) return;
   const meals = await storage.getMeals(currentDate);
   const water = await storage.getWater(currentDate);
-  
   const grouped = { Breakfast: [], Lunch: [], Dinner: [], Snack: [] };
   let totalCals = 0, totalPro = 0;
   meals.forEach(m => {
-    totalCals += (m.calories || 0);
-    totalPro += (m.protein || 0);
-    if (grouped[m.category]) grouped[m.category].push(m);
-    else grouped.Snack.push(m);
+    totalCals += (m.calories || 0); totalPro += (m.protein || 0);
+    if (grouped[m.category]) grouped[m.category].push(m); else grouped.Snack.push(m);
   });
-
   elements.currentWater.textContent = water;
   updateWaterSummary(water);
-
   elements.categorizedMeals.innerHTML = Object.keys(grouped).map(cat => `
     <div class="category-section glass ${categoriesExpanded[cat] ? '' : 'collapsed'}" data-cat="${cat}">
       <div class="category-header">
@@ -341,21 +359,12 @@ async function renderJournal() {
         ${grouped[cat].length === 0 ? '<p style="color:var(--text-dim);font-size:0.8rem">Empty</p>' : grouped[cat].map(m => `
           <div class="meal-item glass" data-id="${m.id}">
             <div class="meal-photo" style="background-image: url('${m.stockPhoto || `https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=150&q=80&sig=${encodeURIComponent(m.name)}`}')"></div>
-            <div class="meal-details">
-              <span class="meal-name">${m.name}</span>
-              <span class="meal-meta">${m.calories} kcal</span>
-              <div class="macro-chips">
-                <span class="chip protein">P: ${m.protein || 0}g</span>
-                <span class="chip carbs">C: ${m.carbs || 0}g</span>
-                <span class="chip fat">F: ${m.fat || 0}g</span>
-              </div>
+            <div class="meal-details"><span class="meal-name">${m.name}</span><span class="meal-meta">${m.calories} kcal</span>
+              <div class="macro-chips"><span class="chip protein">P: ${m.protein || 0}g</span><span class="chip carbs">C: ${m.carbs || 0}g</span><span class="chip fat">F: ${m.fat || 0}g</span></div>
             </div>
-          </div>
-        `).join('')}
+          </div>`).join('')}
       </div>
-    </div>
-  `).join('');
-
+    </div>`).join('');
   lucide.createIcons();
   setupJournalInteractions(grouped);
   updateSummary(totalCals, totalPro);
@@ -363,9 +372,7 @@ async function renderJournal() {
 
 function setupJournalInteractions(grouped) {
   document.querySelectorAll('.category-header').forEach(h => h.addEventListener('click', () => {
-    const s = h.parentElement;
-    categoriesExpanded[s.dataset.cat] = !categoriesExpanded[s.dataset.cat];
-    s.classList.toggle('collapsed');
+    const s = h.parentElement; categoriesExpanded[s.dataset.cat] = !categoriesExpanded[s.dataset.cat]; s.classList.toggle('collapsed');
   }));
   document.querySelectorAll('.meal-item').forEach(i => i.addEventListener('click', (e) => {
     const meal = Object.values(grouped).flat().find(m => m.id === i.dataset.id);
@@ -376,18 +383,15 @@ function setupJournalInteractions(grouped) {
 function updateSummary(cals, pro) {
   const calGoal = currentSettings.calGoal || 2000;
   const proGoal = Math.round((currentSettings.currentWeight || 180) * 0.8) || 150;
-  elements.totalCals.textContent = cals;
-  elements.goalCals.textContent = calGoal;
-  elements.totalPro.textContent = pro;
-  elements.goalPro.textContent = proGoal;
+  elements.totalCals.textContent = cals; elements.goalCals.textContent = calGoal;
+  elements.totalPro.textContent = pro; elements.goalPro.textContent = proGoal;
   elements.calBar.style.width = `${Math.min(100, (cals / calGoal) * 100)}%`;
   elements.proBar.style.width = `${Math.min(100, (pro / proGoal) * 100)}%`;
 }
 
 function updateWaterSummary(amt) {
   const goal = Math.round((currentSettings.currentWeight || 180) * 0.5) || 90;
-  elements.goalWater.textContent = goal;
-  elements.waterBar.style.width = `${Math.min(100, (amt / goal) * 100)}%`;
+  elements.goalWater.textContent = goal; elements.waterBar.style.width = `${Math.min(100, (amt / goal) * 100)}%`;
 }
 
 async function renderShoppingList() {
