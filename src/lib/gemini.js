@@ -1,10 +1,10 @@
-﻿import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 export const analyzeFood = async (key, input, type) => {
   if (!key) return null;
   const genAI = new GoogleGenerativeAI(key.trim());
   
-  const modelsToTry = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-2.0-flash-lite", "gemini-1.5-flash"];
+  const modelsToTry = ["gemini-2.0-flash", "gemini-2.0-flash-lite", "gemini-1.5-flash"];
   
   for (const modelName of modelsToTry) {
     try {
@@ -29,7 +29,7 @@ export const analyzeFood = async (key, input, type) => {
       const jsonMatch = text.match(/\{[\s\S]*\}/);
       
       if (jsonMatch) {
-         console.log(`[POST-ENTRY] Success with ${modelName}! ✅`);
+         console.log(`[POST-ENTRY] Success with ${modelName}! ?`);
          return JSON.parse(jsonMatch[0]);
       }
     } catch (e) {
@@ -38,3 +38,4 @@ export const analyzeFood = async (key, input, type) => {
   }
   return null;
 };
+
