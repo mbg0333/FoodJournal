@@ -10,6 +10,7 @@ import { analyzeFood } from './lib/gemini';
 
 // Initialize State
 let currentUser = null;
+let currentTempMeal = null;
 let currentSettings = {
   geminiKey: localStorage.getItem('gemini_key') || '',
   startWeight: 0,
@@ -48,7 +49,19 @@ const elements = {
     journal: document.getElementById('journal-view'),
     shopping: document.getElementById('shopping-view'),
     stats: document.getElementById('stats-view')
-  }
+  },
+  // Confirm Modal Elements
+  confirmModal: document.getElementById('confirm-modal'),
+  confirmTitle: document.getElementById('confirm-title'),
+  confirmCalories: document.getElementById('confirm-calories'),
+  confirmProtein: document.getElementById('confirm-protein'),
+  confirmCarbs: document.getElementById('confirm-carbs'),
+  confirmFat: document.getElementById('confirm-fat'),
+  servingSlider: document.getElementById('serving-slider'),
+  servingLabel: document.getElementById('serving-label'),
+  confirmCategory: document.getElementById('confirm-category'),
+  saveConfirm: document.getElementById('save-confirm'),
+  cancelConfirm: document.getElementById('cancel-confirm')
 };
 
 // Initialize App
@@ -114,8 +127,7 @@ function setupEventListeners() {
     localStorage.setItem('gemini_key', newSettings.geminiKey);
     currentSettings = newSettings;
     await updateDashboard();
-    // Re-check models with new key
-    await checkAvailableModels(newSettings.geminiKey);
+    checkAvailableModels(newSettings.geminiKey);
     showLoading(false);
     elements.settingsModal.style.display = 'none';
   });
@@ -129,24 +141,62 @@ function setupEventListeners() {
   elements.textLog.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') handleLog('text');
   });
+
+  // Confirm Modal Listeners
+  elements.servingSlider.addEventListener('input', updateConfirmValues);
+  
+  elements.cancelConfirm.addEventListener('click', () => {
+    elements.confirmModal.style.display = 'none';
+    currentTempMeal = null;
+  });
+
+  elements.saveConfirm.addEventListener('click', async () => {
+    if (!currentTempMeal) return;
+    
+    const multiplier = parseFloat(elements.servingSlider.value);
+    const finalMeal = {
+      ...currentTempMeal,
+      name: currentTempMeal.name,
+      calories: Math.round(currentTempMeal.calories * multiplier),
+      protein: Math.round(currentTempMeal.protein * multiplier),
+      carbs: Math.round(currentTempMeal.carbs * multiplier),
+      fat: Math.round(currentTempMeal.fat * multiplier),
+      category: elements.confirmCategory.value,
+      servingMultiplier: multiplier,
+      timestamp: new Date().toISOString()
+    };
+
+    showLoading(true);
+    await storage.addMeal(finalMeal);
+    await renderMeals();
+    showLoading(false);
+    
+    elements.confirmModal.style.display = 'none';
+    currentTempMeal = null;
+    elements.textLog.value = '';
+  });
+}
+
+function updateConfirmValues() {
+  if (!currentTempMeal) return;
+  const multiplier = parseFloat(elements.servingSlider.value);
+  elements.servingLabel.textContent = `${multiplier}x`;
+  
+  elements.confirmCalories.value = Math.round(currentTempMeal.calories * multiplier);
+  elements.confirmProtein.value = Math.round(currentTempMeal.protein * multiplier);
+  elements.confirmCarbs.value = Math.round(currentTempMeal.carbs * multiplier);
+  elements.confirmFat.value = Math.round(currentTempMeal.fat * multiplier);
 }
 
 async function checkAvailableModels(key) {
   if (!key) return;
   try {
-    console.log("AI: Scanning for available models...");
     const resp = await fetch(`https://generativelanguage.googleapis.com/v1/models?key=${key}`);
     const data = await resp.json();
     if (data.models) {
-      console.log("-- AVAILABLE MODELS --");
-      console.log(data.models.map(m => m.name.split('/').pop()));
-      console.log("----------------------");
-    } else {
-      console.warn("AI: Could not list models (Stable v1). Key might be brand new.");
+      console.log("Available Models:", data.models.map(m => m.name.split("/").pop()));
     }
-  } catch (e) {
-    console.warn("AI: Model scan failed.");
-  }
+  } catch (e) {}
 }
 
 async function loadUserData() {
@@ -163,18 +213,10 @@ async function loadUserData() {
       currentWeight: settings.currentWeight || 0
     };
     
-    const key = currentSettings.geminiKey || "";
-    console.log("--- GEMINI KEY CHECK ---");
-    console.log("Status:", key ? "Key Detected ✅" : "No Key Found ❌");
-    console.log("Prefix:", key.substring(0, 7));
-    console.log("Suffix:", key.substring(key.length - 4));
-    console.log("-----------------------");
-    
-    if (key) await checkAvailableModels(key);
-    
     await updateDashboard();
     await renderMeals();
     await renderShoppingList();
+    if (currentSettings.geminiKey) checkAvailableModels(currentSettings.geminiKey);
   } catch (e) {
     console.error("Error loading user data:", e);
   } finally {
@@ -210,11 +252,10 @@ async function handleLog(type, data = null) {
 
     const result = await analyzeFood(key, input, type);
     if (result) {
-      await storage.addMeal(result);
-      elements.textLog.value = '';
-      await renderMeals();
+      currentTempMeal = result;
+      openConfirmModal(result);
     } else {
-      alert('AI analysis failed. Check Console for the "AVAILABLE MODELS" list.');
+      alert('AI analysis failed. Try again.');
     }
   } catch (e) {
     console.error(e);
@@ -222,6 +263,19 @@ async function handleLog(type, data = null) {
   } finally {
     showLoading(false);
   }
+}
+
+function openConfirmModal(meal) {
+  elements.confirmTitle.textContent = `Confirm: ${meal.name}`;
+  elements.confirmCalories.value = meal.calories;
+  elements.confirmProtein.value = meal.protein || 0;
+  elements.confirmCarbs.value = meal.carbs || 0;
+  elements.confirmFat.value = meal.fat || 0;
+  elements.confirmCategory.value = meal.category || 'Lunch';
+  elements.servingSlider.value = 1;
+  elements.servingLabel.textContent = '1x';
+  
+  elements.confirmModal.style.display = 'flex';
 }
 
 function startVoiceRecognition() {
@@ -264,6 +318,11 @@ async function renderMeals() {
       <div class="meal-info">
         <span class="meal-name">${meal.name}</span>
         <span class="meal-meta">${meal.calories} kcal • ${meal.category}</span>
+        <div class="macro-chips">
+          <span class="chip protein">P: ${meal.protein || 0}g</span>
+          <span class="chip carbs">C: ${meal.carbs || 0}g</span>
+          <span class="chip fat">F: ${meal.fat || 0}g</span>
+        </div>
       </div>
       ${meal.restaurant ? `<span class="meal-type">${meal.restaurant}</span>` : ''}
     </div>

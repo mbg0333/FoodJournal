@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap');
+﻿@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap');
 
 :root {
   --primary: #6366f1;
@@ -278,6 +278,41 @@ button.icon {
   background: rgba(99, 102, 241, 0.1);
   color: var(--primary);
   margin-left: 8px;
+}
+
+.macro-chips {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.chip {
+  font-size: 0.65rem;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+.chip.protein { background: rgba(99, 102, 241, 0.1); color: #818cf8; }
+.chip.carbs { background: rgba(236, 72, 153, 0.1); color: #f472b6; }
+.chip.fat { background: rgba(16, 185, 129, 0.1); color: #34d399; }
+
+input[type="range"] {
+  -webkit-appearance: none;
+  background: rgba(255,255,255,0.05);
+  height: 6px;
+  border-radius: 3px;
+  padding: 0;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  background: var(--primary);
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 0 10px var(--primary-glow);
 }
 
 .shopping-item {

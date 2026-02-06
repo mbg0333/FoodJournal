@@ -4,17 +4,15 @@ export const analyzeFood = async (key, input, type) => {
   if (!key) return null;
   const genAI = new GoogleGenerativeAI(key.trim());
   
-  // Updated list based on your specific key scanner results
-  const modelsToTry = ["gemini-2.0-flash", "gemini-2.5-flash", "gemini-2.0-flash-lite", "gemini-1.5-flash"];
+  const modelsToTry = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-2.0-flash-lite", "gemini-1.5-flash"];
   
   for (const modelName of modelsToTry) {
     try {
-      // NEW LOG FORMAT TO IDENTIFY CACHE BUSTING
-      console.log(`[VER 2.0] AI HUNT: Checking ${modelName}...`);
+      console.log(`[POST-ENTRY] AI HUNT: Checking ${modelName}...`);
       const model = genAI.getGenerativeModel({ model: modelName });
       
-      const prompt = `Analyze this food input. Identify name, calories, category (Breakfast, Lunch, Dinner, Snack). 
-      Return ONLY valid JSON: { "name": "string", "calories": number, "category": "string", "restaurant": "string" }`;
+      const prompt = `Analyze this food input. Identify name, estimated calories, protein (g), carbs (g), fat (g), and category (Breakfast, Lunch, Dinner, Snack). 
+      Return ONLY valid JSON: { "name": "string", "calories": number, "protein": number, "carbs": number, "fat": number, "category": "string", "restaurant": "string" }`;
       
       let result;
       if (type === 'photo') {
@@ -31,11 +29,11 @@ export const analyzeFood = async (key, input, type) => {
       const jsonMatch = text.match(/\{[\s\S]*\}/);
       
       if (jsonMatch) {
-         console.log(`[VER 2.0] AI HUNT: Success with ${modelName}! ✅`);
+         console.log(`[POST-ENTRY] Success with ${modelName}! ✅`);
          return JSON.parse(jsonMatch[0]);
       }
     } catch (e) {
-      console.warn(`[VER 2.0] AI HUNT: ${modelName} skipped.`, e.message);
+      console.warn(`[POST-ENTRY] ${modelName} skipped.`, e.message);
     }
   }
   return null;
