@@ -384,7 +384,7 @@ async function loadUserData() {
 
 function switchTab(t) {
   Object.keys(elements.views).forEach(v => { if (elements.views[v]) elements.views[v].style.display = v === t ? 'block' : 'none'; });
-  if (elements.navItems) elements.navItems.forEach(item => item.classList.toggle('active', item.getAttribute('data-tab') === t));
+  if (elements.navItems) elements.navItems.forEach(item => item.classList.toggle('active', (item && item.getAttribute('data-tab') === t)));
 }
 
 async function renderJournal() {
@@ -494,5 +494,6 @@ function toBase64(f) { return new Promise((s, r) => { const rdr = new FileReader
 function startVoiceRecognition() { const SR = window.SpeechRecognition || window.webkitSpeechRecognition; if (!SR) return alert("No support"); const r = new SR(); r.onresult = (e) => { elements.textLog.value = e.results[0][0].transcript; handleLog('text'); }; r.start(); }
 
 init();
+
 
 

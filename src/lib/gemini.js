@@ -4,7 +4,7 @@ export const analyzeFood = async (key, input, type) => {
   if (!key) return null;
   const genAI = new GoogleGenerativeAI(key.trim());
   
-  const modelsToTry = ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-flash-8b"];
+  const modelsToTry = ["gemini-2.0-flash", "gemini-1.5-flash-latest", "gemini-1.5-flash-8b"];
   
   for (const modelName of modelsToTry) {
     try {
@@ -34,6 +34,11 @@ export const analyzeFood = async (key, input, type) => {
       }
     } catch (e) {
       
+      if (e.message.includes("429")) {
+        console.warn("AI: Rate limit reached. Waiting 2 seconds...");
+        alert("AI is busy (Rate Limit). Please wait 10 seconds and try again.");
+        return null;
+      }
       if (e.message.includes("403") || e.message.includes("400") || e.message.includes("API_KEY_INVALID") || e.message.includes("expired")) {
         console.error("CRITICAL: API Key Error!", e.message);
         alert("Gemini API Key Error: Your key has likely expired or been revoked. Please update it in Settings (??).");
@@ -45,6 +50,7 @@ export const analyzeFood = async (key, input, type) => {
   }
   return null;
 };
+
 
 
 
