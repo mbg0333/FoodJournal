@@ -10,7 +10,7 @@ import { analyzeFood } from './lib/gemini';
 
 // Initialize State
 let currentUser = null;
-let currentTempMeal = null;
+let currentTempMeal = null; 
 let currentDate = new Date().toISOString().split('T')[0];
 let currentSettings = {
   geminiKey: localStorage.getItem('gemini_key') || '',
@@ -59,6 +59,7 @@ const elements = {
   prevDay: document.getElementById('prev-day'),
   nextDay: document.getElementById('next-day'),
   dateDisplay: document.getElementById('current-date-display'),
+  datePickerHidden: document.getElementById('date-picker-hidden'),
   // Summary
   totalCals: document.getElementById('total-calories'),
   goalCals: document.getElementById('goal-calories-display'),
@@ -67,11 +68,17 @@ const elements = {
   calBar: document.getElementById('cal-progress-bar'),
   proBar: document.getElementById('pro-progress-bar'),
   // Water
+  waterCard: document.getElementById('water-card'),
   currentWater: document.getElementById('current-water'),
   goalWater: document.getElementById('goal-water'),
   waterBar: document.getElementById('water-progress-bar'),
   waterBtns: document.querySelectorAll('.water-btn'),
   resetWater: document.getElementById('reset-water'),
+  waterModal: document.getElementById('water-modal'),
+  modalCurrentWaterValue: document.getElementById('modal-current-water'),
+  waterMinus: document.getElementById('water-minus'),
+  waterPlus: document.getElementById('water-plus'),
+  closeWaterModal: document.getElementById('close-water-modal'),
   // Categorized List
   categorizedMeals: document.getElementById('categorized-meals'),
   // Photo Modal
@@ -82,6 +89,7 @@ const elements = {
   // Confirm/Edit Modal
   confirmModal: document.getElementById('confirm-modal'),
   confirmTitle: document.getElementById('confirm-title'),
+  confirmImgPreview: document.getElementById('confirm-img-preview'),
   confirmName: document.getElementById('confirm-name'),
   confirmCalories: document.getElementById('confirm-calories'),
   confirmProtein: document.getElementById('confirm-protein'),
@@ -119,6 +127,14 @@ function setupEventListeners() {
 
   elements.prevDay.addEventListener('click', () => changeDate(-1));
   elements.nextDay.addEventListener('click', () => changeDate(1));
+  
+  // Date Picker Logic
+  elements.dateDisplay.addEventListener('click', () => elements.datePickerHidden.showPicker());
+  elements.datePickerHidden.addEventListener('change', (e) => {
+    currentDate = e.target.value;
+    updateDateDisplay();
+    renderJournal();
+  });
 
   elements.navItems.forEach(item => {
     item.addEventListener('click', (e) => {
@@ -127,7 +143,6 @@ function setupEventListeners() {
     });
   });
 
-  // Settings
   elements.settingsBtn.addEventListener('click', () => {
     elements.apiKeyInput.value = currentSettings.geminiKey || '';
     elements.calGoalInput.value = currentSettings.calGoal || '';
@@ -161,18 +176,20 @@ function setupEventListeners() {
     elements.settingsModal.style.display = 'none';
   });
 
-  // Water
+  // Water Adjustment Logic
   elements.waterBtns.forEach(btn => {
-    btn.addEventListener('click', async () => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
       const amt = parseInt(btn.dataset.amt);
-      const next = parseInt(elements.currentWater.textContent) + amt;
+      const next = Math.max(0, parseInt(elements.currentWater.textContent) + amt);
       elements.currentWater.textContent = next;
       updateWaterSummary(next);
       await storage.setWater(currentDate, next);
     });
   });
 
-  elements.resetWater.addEventListener('click', async () => {
+  elements.resetWater.addEventListener('click', async (e) => {
+    e.stopPropagation();
     if (confirm('Reset water intake?')) {
       elements.currentWater.textContent = 0;
       updateWaterSummary(0);
@@ -180,11 +197,32 @@ function setupEventListeners() {
     }
   });
 
-  // Logging Actions
+  elements.waterCard.addEventListener('click', () => {
+    elements.modalCurrentWaterValue.textContent = elements.currentWater.textContent;
+    elements.waterModal.style.display = 'flex';
+  });
+
+  elements.waterMinus.addEventListener('click', async () => {
+    const current = Math.max(0, parseInt(elements.modalCurrentWaterValue.textContent) - 8);
+    elements.modalCurrentWaterValue.textContent = current;
+    elements.currentWater.textContent = current;
+    updateWaterSummary(current);
+    await storage.setWater(currentDate, current);
+  });
+
+  elements.waterPlus.addEventListener('click', async () => {
+    const current = parseInt(elements.modalCurrentWaterValue.textContent) + 8;
+    elements.modalCurrentWaterValue.textContent = current;
+    elements.currentWater.textContent = current;
+    updateWaterSummary(current);
+    await storage.setWater(currentDate, current);
+  });
+
+  elements.closeWaterModal.addEventListener('click', () => elements.waterModal.style.display = 'none');
+
+  // Logging
   elements.logBtn.addEventListener('click', () => handleLog('text'));
   elements.voiceBtn.addEventListener('click', startVoiceRecognition);
-  
-  // Camera / Photo Choice
   elements.photoBtn.addEventListener('click', () => elements.photoModal.style.display = 'flex');
   elements.closePhotoModal.addEventListener('click', () => elements.photoModal.style.display = 'none');
   
@@ -200,10 +238,8 @@ function setupEventListeners() {
 
   elements.fileInput.addEventListener('change', (e) => handleLog('photo', e.target.files[0]));
   elements.cameraInput.addEventListener('change', (e) => handleLog('photo', e.target.files[0]));
-  
   elements.textLog.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleLog('text'); });
 
-  // Modal Listeners
   elements.servingSlider.addEventListener('input', updateConfirmValues);
   elements.cancelConfirm.addEventListener('click', () => { elements.confirmModal.style.display = 'none'; currentTempMeal = null; });
 
@@ -230,7 +266,8 @@ function setupEventListeners() {
       carbs: parseInt(elements.confirmCarbs.value) || 0,
       fat: parseInt(elements.confirmFat.value) || 0,
       category: elements.confirmCategory.value,
-      stockPhoto: `https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=150&q=80&sig=${encodeURIComponent(elements.confirmName.value)}`,
+      // Use existing stock photo if available, otherwise generate new one
+      stockPhoto: currentTempMeal.stockPhoto || `https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=300&q=80&sig=${Date.now()}_${encodeURIComponent(elements.confirmName.value)}`,
       timestamp: currentTempMeal.timestamp || new Date().toISOString()
     };
     showLoading(true);
@@ -260,7 +297,8 @@ function changeDate(days) {
 
 function updateDateDisplay() {
   const today = new Date().toISOString().split('T')[0];
-  elements.dateDisplay.textContent = currentDate === today ? 'Today' : new Date(currentDate + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  elements.dateDisplay.textContent = currentDate === today ? 'Today' : new Date(currentDate + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  elements.datePickerHidden.value = currentDate;
 }
 
 function updateConfirmValues() {
@@ -308,11 +346,18 @@ async function handleLog(type, data = null) {
     if (type === 'photo' && data) input = await toBase64(data);
     const result = await analyzeFood(currentSettings.geminiKey, input, type);
     if (result) {
-      currentTempMeal = { ...result, rawCalories: result.calories, rawProtein: result.protein, rawCarbs: result.carbs, rawFat: result.fat };
+      currentTempMeal = { 
+        ...result, 
+        rawCalories: result.calories, 
+        rawProtein: result.protein, 
+        rawCarbs: result.carbs, 
+        rawFat: result.fat,
+        // unique sig for each scan
+        stockPhoto: `https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=300&q=80&sig=${Date.now()}_${encodeURIComponent(result.name)}`
+      };
       openConfirmModal(currentTempMeal, false);
-    } else alert('AI failed. Try again.');
-  } catch (e) { console.error(e); alert('Error logging meal.'); }
-  finally { showLoading(false); }
+    } else alert('AI failed.');
+  } catch (e) { console.error(e); } finally { showLoading(false); }
 }
 
 function openConfirmModal(meal, isEdit = false) {
@@ -323,6 +368,11 @@ function openConfirmModal(meal, isEdit = false) {
   elements.confirmCarbs.value = meal.carbs || 0;
   elements.confirmFat.value = meal.fat || 0;
   elements.confirmCategory.value = meal.category || 'Lunch';
+  
+  // Show image preview
+  const photoUrl = meal.stockPhoto || `https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=300&bit=q80&sig=${encodeURIComponent(meal.name)}`;
+  elements.confirmImgPreview.style.backgroundImage = `url('${photoUrl}')`;
+  
   elements.deleteBtn.style.display = isEdit ? 'flex' : 'none';
   elements.servingContainer.style.display = isEdit ? 'none' : 'block';
   if (!isEdit) { elements.servingSlider.value = 1; elements.servingLabel.textContent = '1x'; }
@@ -330,9 +380,9 @@ function openConfirmModal(meal, isEdit = false) {
 }
 
 function startVoiceRecognition() {
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SpeechRecognition) return alert('Speech not supported.');
-  const recognition = new SpeechRecognition();
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) return alert('Not supported.');
+  const recognition = new SR();
   recognition.onresult = (e) => { elements.textLog.value = e.results[0][0].transcript; handleLog('text'); };
   recognition.start();
 }
