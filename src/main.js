@@ -328,7 +328,6 @@ async function handleLog(type, data = null) {
     }
   } catch (e) { console.error(e); } finally { showLoading(false); }
 }
-}
 
 function openConfirmModal(m, edit) {
   elements.confirmTitle.textContent = edit ? "Edit" : "Confirm";
@@ -552,14 +551,14 @@ window.showSearchResultsModal = (results) => {
     div.className = 'search-item glass';
     div.style.padding = '15px';
     div.style.cursor = 'pointer';
-    div.innerHTML = \
-      <div style="font-weight:bold; color:var(--primary);">\</div>
+    div.innerHTML = `
+      <div style="font-weight:bold; color:var(--primary);">${r.name}</div>
       <div style="font-size:0.85rem; color:var(--text-dim);">
-        \ kcal | P:\g C:\g F:\g
+        ${r.calories} kcal | P:${r.protein||0}g C:${r.carbs||0}g F:${r.fat||0}g
       </div>
-    \;
+    `;
     div.onclick = () => {
-      currentTempMeal = { ...r, stockPhoto: \https://source.unsplash.com/featured/?\,food\ };
+      currentTempMeal = { ...r, stockPhoto: r.stockPhoto || `https://source.unsplash.com/featured/?${encodeURIComponent(r.photoSearchQuery || r.name)},food` };
       modal.style.display = 'none';
       openConfirmModal(currentTempMeal, false);
     };
