@@ -294,7 +294,7 @@ async function handleLog(type, data = null) {
       } else {
         // Single result fallback
         const item = Array.isArray(res) ? res[0] : res;
-        currentTempMeal = { ...item, stockPhoto: \https://source.unsplash.com/featured/?\,food\ };
+        currentTempMeal = { ...item, stockPhoto: `https://source.unsplash.com/featured/?${encodeURIComponent(item.photoSearchQuery || item.name)},food` };
         openConfirmModal(currentTempMeal, false);
       }
     }
@@ -544,3 +544,4 @@ window.showSearchResultsModal = (results) => {
   
   modal.style.display = 'flex';
 };
+
