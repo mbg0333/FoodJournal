@@ -4,13 +4,13 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="./vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>AI Food Journal v2.9</title>
-    <!-- Official Lucide Script -->
-    <script src="https://unpkg.com/lucide@0.418.0"></script>
+    <title>AI Food Journal v2.9.2</title>
+    <!-- Official Lucide Script (v0.418.0) -->
+    <script src="https://unpkg.com/lucide@0.418.0/dist/umd/lucide.min.js"></script>
     <style>
       @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap');
     </style>
-    <script type="module" crossorigin src="./assets/index-DkurJrx4.js"></script>
+    <script type="module" crossorigin src="./assets/index-BoxeVRXK.js"></script>
     <link rel="stylesheet" crossorigin href="./assets/index-CQc0l-Kn.css">
   </head>
   <body>
@@ -27,22 +27,21 @@
       <header class="header">
         <h1 class="gradient-text">Food Journal</h1>
         <div style="display: flex; gap: 8px;">
-          <!-- Using standard lucide icons with explicit sizes -->
-          <button id="search-btn" class="icon glass"><i data-lucide="search" style="width:20px; height:20px;"></i></button>
-          <button id="settings-btn" class="icon glass"><i data-lucide="settings" style="width:20px; height:20px;"></i></button>
-          <button id="logout-btn" class="icon glass"><i data-lucide="log-out" style="width:20px; height:20px;"></i></button>
+          <button id="search-btn" class="icon glass"><i data-lucide="search"></i></button>
+          <button id="settings-btn" class="icon glass"><i data-lucide="settings"></i></button>
+          <button id="logout-btn" class="icon glass"><i data-lucide="log-out"></i></button>
         </div>
       </header>
 
       <!-- TAB 1: JOURNAL -->
       <div id="journal-view" class="view">
         <div class="date-nav glass">
-          <button id="prev-day" class="icon-sm glass"><i data-lucide="chevron-left" style="width:20px; height:20px;"></i></button>
+          <button id="prev-day" class="icon-sm glass"><i data-lucide="chevron-left"></i></button>
           <div style="flex: 1; text-align: center; position: relative;">
             <div id="current-date-display" style="font-weight: 600; cursor: pointer;">Today</div>
             <input type="date" id="date-picker-hidden" style="position: absolute; opacity: 0; left: 0; top: 0; width: 100%; height: 100%; cursor: pointer;" />
           </div>
-          <button id="next-day" class="icon-sm glass"><i data-lucide="chevron-right" style="width:20px; height:20px;"></i></button>
+          <button id="next-day" class="icon-sm glass"><i data-lucide="chevron-right"></i></button>
         </div>
 
         <div class="summary-card glass">
@@ -61,7 +60,7 @@
         <div id="water-card" class="water-card glass">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
             <div style="display: flex; align-items: center; gap: 8px;">
-              <i data-lucide="droplet" style="color: #60a5fa; width:20px; height:20px;"></i>
+              <i data-lucide="droplet" style="color: #60a5fa;"></i>
               <h3 style="font-size: 1rem;">Water</h3>
             </div>
             <div style="font-size: 1rem; font-weight: 700;">
@@ -73,7 +72,7 @@
             <button class="water-btn primary-alt" data-amt="8">+8</button>
             <button class="water-btn primary-alt" data-amt="16">+16</button>
             <button class="water-btn primary-alt" data-amt="32">+32</button>
-            <button id="reset-water" class="glass icon-sm" style="margin-left: auto; color: var(--text-dim);"><i data-lucide="refresh-cw" style="width:16px; height:16px;"></i></button>
+            <button id="reset-water" class="glass icon-sm" style="margin-left: auto; color: var(--text-dim);"><i data-lucide="refresh-cw"></i></button>
           </div>
         </div>
 
@@ -84,10 +83,10 @@
             <button id="log-btn" class="primary">Log</button>
           </div>
           <div style="display: flex; gap: 10px;">
-            <button id="voice-btn" class="icon glass"><i data-lucide="mic" style="width:20px; height:20px;"></i></button>
-            <button id="photo-btn" class="icon glass"><i data-lucide="camera" style="width:20px; height:20px;"></i></button>
+            <button id="voice-btn" class="icon glass"><i data-lucide="mic"></i></button>
+            <button id="photo-btn" class="icon glass"><i data-lucide="camera"></i></button>
             <button id="open-favs-log-btn" class="glass" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px;">
-              <i data-lucide="star" style="width: 16px; height:16px; color: #fbbf24;"></i> FAVS
+              <i data-lucide="star" style="width: 16px; color: #fbbf24;"></i> FAVS
             </button>
           </div>
           <div id="favs-dropdown" class="glass favs-dropdown" style="display: none;">
@@ -121,7 +120,6 @@
             <div class="stat-item"><span id="goal-weight" class="stat-value">--</span><span class="stat-label">Goal</span></div>
           </div>
         </div>
-
         <div class="glass" style="padding: 24px; margin-top: 20px;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
             <h3 style="font-size: 1.1rem;">Weekly Check-in</h3>
@@ -147,10 +145,10 @@
 
       <!-- Bottom Navigation -->
       <nav class="bottom-nav">
-        <a href="#" class="nav-item active" data-tab="journal"><i data-lucide="book-open" style="width:20px; height:20px;"></i><span>Journal</span></a>
-        <a href="#" class="nav-item" data-tab="favorites"><i data-lucide="star" style="width:20px; height:20px;"></i><span>Favs</span></a>
-        <a href="#" class="nav-item" data-tab="weight"><i data-lucide="scale" style="width:20px; height:20px;"></i><span>Weight</span></a>
-        <a href="#" class="nav-item" data-tab="shopping"><i data-lucide="shopping-bag" style="width:20px; height:20px;"></i><span>Shopping</span></a>
+        <a href="#" class="nav-item active" data-tab="journal"><i data-lucide="book-open"></i><span>Journal</span></a>
+        <a href="#" class="nav-item" data-tab="favorites"><i data-lucide="star"></i><span>Favs</span></a>
+        <a href="#" class="nav-item" data-tab="weight"><i data-lucide="scale"></i><span>Weight</span></a>
+        <a href="#" class="nav-item" data-tab="shopping"><i data-lucide="shopping-bag"></i><span>Shopping</span></a>
       </nav>
 
       <!-- Search Modal -->
@@ -169,7 +167,7 @@
         <div class="modal-content glass">
           <div class="modal-header" style="margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
             <h3 id="confirm-title">Confirm Entry</h3>
-            <button id="delete-btn" class="icon-sm" style="background: rgba(239, 68, 68, 0.2); color: #ef4444;"><i data-lucide="trash-2" style="width:20px; height:20px;"></i></button>
+            <button id="delete-btn" class="icon-sm" style="background: rgba(239, 68, 68, 0.2); color: #ef4444;"><i data-lucide="trash-2"></i></button>
           </div>
           <div id="confirm-img-preview" class="image-preview"></div>
           <div class="input-group"><label>Food Name</label><input type="text" id="confirm-name" /></div>
@@ -197,7 +195,7 @@
       <div id="settings-modal" class="modal-overlay">
         <div class="modal-content glass">
           <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-            <h3>Settings</h3><button id="close-settings" class="icon" style="background:none;"><i data-lucide="x" style="width:20px; height:20px;"></i></button>
+            <h3>Settings</h3><button id="close-settings" class="icon" style="background:none;"><i data-lucide="x"></i></button>
           </div>
           <div class="input-group"><label>Gemini API Key</label><input type="password" id="api-key" /></div>
           <div class="input-group"><label>Daily Calorie Goal</label><input type="number" id="cal-goal-input" /></div>
