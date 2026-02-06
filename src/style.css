@@ -244,3 +244,6 @@ svg {
   justify-content: center;
 }
 
+
+svg, svg * { visibility: visible !important; opacity: 1 !important; }
+
