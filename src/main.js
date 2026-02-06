@@ -16,6 +16,7 @@ let currentSettings = { geminiKey: '', calGoal: 2000, startWeight: 180, goalWeig
 let categoriesExpanded = { Breakfast: true, Lunch: true, Dinner: true, Snack: true };
 let currentFavorites = [];
 let allMeals = [];
+let activeSearchTab = "history";
 let selectionMode = false;
 let selectedIds = new Set();
 let checkinHistory = [];
@@ -81,8 +82,14 @@ function selectElements() {
     addCheckinBtn: document.getElementById('add-checkin-btn'),
     checkinHistoryList: document.getElementById('checkin-history'),
     goalProgress: document.getElementById('goal-progress'),
-    currentWeightDisplay: document.getElementById('current-weight'),
-    goalWeightDisplay: document.getElementById('goal-weight')
+        currentWeightDisplay: document.getElementById('current-weight'),
+    goalWeightDisplay: document.getElementById('goal-weight'),
+    logSearchBtn: document.getElementById('log-search-btn'),
+    searchTabHistory: document.getElementById('search-tab-history'),
+    searchTabWeb: document.getElementById('search-tab-web'),
+    triggerAiSearch: document.getElementById('trigger-ai-search'),
+    aiSearchPrompt: document.getElementById('ai-search-prompt'),
+    confirmTitle: document.getElementById('confirm-title')
   };
 }
 
@@ -176,7 +183,11 @@ function setupEventListeners() {
     }
   };
 
-  if (elements.searchBtn) elements.searchBtn.onclick = () => elements.searchModal.style.display = 'flex';
+  if (elements.searchBtn) elements.searchBtn.onclick = () => { elements.searchModal.style.display = 'flex'; activeSearchTab = 'history'; updateSearchTabs(); handleSearch(''); };
+  if (elements.logSearchBtn) elements.logSearchBtn.onclick = () => { elements.searchModal.style.display = 'flex'; activeSearchTab = 'history'; updateSearchTabs(); handleSearch(""); };
+  if (elements.searchTabHistory) elements.searchTabHistory.onclick = () => { activeSearchTab = 'history'; updateSearchTabs(); handleSearch(elements.globalSearchInput.value); };
+  if (elements.searchTabWeb) elements.searchTabWeb.onclick = () => { activeSearchTab = 'web'; updateSearchTabs(); handleSearch(elements.globalSearchInput.value); };
+  if (elements.triggerAiSearch) elements.triggerAiSearch.onclick = () => handleAiWebSearch();
   if (elements.closeSearch) elements.closeSearch.onclick = () => elements.searchModal.style.display = 'none';
   if (elements.globalSearchInput) elements.globalSearchInput.oninput = (e) => handleSearch(e.target.value);
 
@@ -296,10 +307,61 @@ function openConfirmModal(m, edit) {
   elements.confirmModal.style.display = 'flex';
 }
 
+
+function updateSearchTabs() {
+  elements.searchTabHistory.classList.toggle('active-tab', activeSearchTab === 'history');
+  elements.searchTabWeb.classList.toggle('active-tab', activeSearchTab === 'web');
+  elements.aiSearchPrompt.style.display = activeSearchTab === 'web' ? 'block' : 'none';
+  elements.searchResults.style.display = activeSearchTab === 'history' ? 'flex' : 'none';
+}
+
 async function handleSearch(q) {
-  if (q.length < 2) { elements.searchResults.innerHTML = ""; return; }
-  const matches = allMeals.filter(m => m.name.toLowerCase().includes(q.toLowerCase())).slice(0, 8);
-  elements.searchResults.innerHTML = matches.map(m => `<div class="search-item glass" onclick="window.quickLog('${m.id}')"><strong>${m.name}</strong> • ${m.calories} kcal</div>`).join('') || "<p style='text-align:center'>None</p>";
+  if (activeSearchTab === 'web') return;
+  
+  let matches = [];
+  if (q.length < 1) {
+    // Show most recent entries if searching history and q is empty
+    matches = allMeals.slice().sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp)).slice(0, 10);
+  } else {
+    // Regular search filter
+    matches = allMeals.filter(m => m.name.toLowerCase().includes(q.toLowerCase())).slice(0, 10);
+  }
+
+  // Deduplicate matches by name to show "common" items better if they are exact matches
+  const uniqueMatches = [];
+  const names = new Set();
+  matches.forEach(m => {
+    if (!names.has(m.name.toLowerCase())) {
+      names.add(m.name.toLowerCase());
+      uniqueMatches.push(m);
+    }
+  });
+
+  elements.searchResults.innerHTML = uniqueMatches.map(m => `
+    <div class="search-item glass" onclick="window.quickLog('${m.id}')">
+      <div><strong>${m.name}</strong><small>${m.calories} kcal | ${m.category}</small></div>
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+    </div>`).join('') || "<p style='text-align:center; padding: 20px; color: var(--text-dim)'>No recent history found.</p>";
+}
+
+async function handleAiWebSearch() {
+  const q = elements.globalSearchInput.value.trim();
+  if (!q) return alert("Type what you're looking for first!");
+  
+  showLoading(true);
+  try {
+    const res = await analyzeFood(currentSettings.geminiKey, q, 'text'); // Uses existing analyzeFood for web results
+    if (res) {
+      currentTempMeal = { ...res, stockPhoto: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=300&q=80" };
+      openConfirmModal(currentTempMeal, false);
+      elements.searchModal.style.display = 'none';
+    }
+  } catch (e) {
+    console.error(e);
+    alert("AI Search failed. Check API Key.");
+  } finally {
+    showLoading(false);
+  }
 }
 
 window.quickLog = (id) => {
@@ -350,7 +412,7 @@ async function renderJournal() {
     <div class="category-section glass ${categoriesExpanded[cat] ? '' : 'collapsed'}">
       <div class="category-header" onclick="window.toggleCat('${cat}')">
         <h4><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="chevron"><polyline points="6 9 12 15 18 9"></polyline></svg> ${cat}</h4>
-        <span>${grp[cat].length} items • ${grp[cat].reduce((s, m) => s+m.calories, 0)} kcal</span>
+        <span>${grp[cat].length} items ï¿½ ${grp[cat].reduce((s, m) => s+m.calories, 0)} kcal</span>
       </div>
       <div class="category-content">
         ${grp[cat].map(m => `

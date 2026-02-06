@@ -264,3 +264,47 @@ svg {
 #open-favs-log-btn svg { stroke: #fbbf24 !important; }
 .water-card svg { stroke: #60a5fa !important; }
 
+
+
+/* Search Modal Enhancements */
+.active-tab {
+  background: var(--primary) !important;
+  color: white !important;
+  border-color: var(--primary) !important;
+}
+
+.search-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 12px;
+  border: 1px solid var(--glass-border);
+  transition: var(--transition);
+}
+
+.search-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  transform: translateX(4px);
+}
+
+.search-item strong {
+  display: block;
+  font-size: 0.95rem;
+}
+
+.search-item small {
+  color: var(--text-dim);
+}
+
+.ai-pill {
+  background: var(--secondary);
+  color: white;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.6rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  margin-left: 8px;
+}
