@@ -7,6 +7,8 @@ import {
 } from 'firebase/auth';
 import { storage } from './lib/storage';
 import { analyzeFood } from './lib/gemini';
+import { searchUPC } from './lib/openFoodFacts';
+import { searchFatSecretUPC } from './lib/fatSecret';
 
 // Initialize State
 let currentUser = null;
@@ -284,21 +286,48 @@ async function handleLog(type, data = null) {
   if (!currentSettings.geminiKey) return alert("API Key missing");
   showLoading(true);
   try {
-    let input = type === 'text' ? elements.textLog.value : data;
-    if (type === 'photo') input = await toBase64(data);
-    const res = await analyzeFood(currentSettings.geminiKey, input, type);
-        if (res) {
-      // If array, launch selection modal
+    let input = type === "text" ? elements.textLog.value.trim() : data;
+    if (type === "photo") input = await toBase64(data);
+    
+    // UPC Logic
+    const upcRegex = /^\d{8,14}$/;
+    let res = null;
+
+    if (type === "text" && upcRegex.test(input)) {
+        console.log("Checking UPC:", input);
+        
+        // 1. OpenFoodFacts
+        try { res = await searchUPC(input); } catch(e) { console.error(e); }
+        if (res) console.log("Found in OpenFoodFacts");
+
+        // 2. FatSecret
+        if (!res) {
+            console.log("Checking FatSecret...");
+            try { res = await searchFatSecretUPC(input); } catch(e) { console.error(e); }
+            if (res) console.log("Found in FatSecret");
+        }
+    }
+
+    // 3. AI Fallback
+    if (!res) {
+        res = await analyzeFood(currentSettings.geminiKey, input, type);
+    }
+
+    if (res) {
       if (Array.isArray(res) && res.length > 1) {
         showSearchResultsModal(res);
       } else {
-        // Single result fallback
         const item = Array.isArray(res) ? res[0] : res;
-        currentTempMeal = { ...item, stockPhoto: `https://source.unsplash.com/featured/?${encodeURIComponent(item.photoSearchQuery || item.name)},food` };
+        let photo = item.stockPhoto;
+        if (!photo) {
+             photo = `https://source.unsplash.com/featured/?${encodeURIComponent(item.photoSearchQuery || item.name)},food`;
+        }
+        currentTempMeal = { ...item, stockPhoto: photo };
         openConfirmModal(currentTempMeal, false);
       }
     }
   } catch (e) { console.error(e); } finally { showLoading(false); }
+}
 }
 
 function openConfirmModal(m, edit) {
