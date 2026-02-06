@@ -250,7 +250,7 @@ function setupEventListeners() {
     const items = allMeals.filter(m => selectedIds.has(m.id));
     const agg = items.reduce((a, m) => ({ calories: a.calories + m.calories, protein: a.protein + (m.protein || 0), carbs: a.carbs + (m.carbs || 0), fat: a.fat + (m.fat || 0) }), { calories: 0, protein: 0, carbs: 0, fat: 0 });
     showLoading(true);
-    await storage.addFavorite({ ...agg, name, category: "Lunch", stockPhoto: "https://images.unsplash.com/photo-1547592166-23ac45744acd" });
+    await storage.addFavorite({ ...agg, name, category: "Lunch", stockPhoto: `https://source.unsplash.com/featured/?${encodeURIComponent(res.photoSearchQuery || res.name)},food` });
     selectionMode = false; selectedIds.clear(); document.getElementById('bulk-actions').style.display = 'none';
     await loadUserData(); showLoading(false);
   };
@@ -288,7 +288,7 @@ async function handleLog(type, data = null) {
     if (type === 'photo') input = await toBase64(data);
     const res = await analyzeFood(currentSettings.geminiKey, input, type);
     if (res) {
-      currentTempMeal = { ...res, stockPhoto: `https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=300&q=80&sig=${Date.now()}` };
+      currentTempMeal = { ...res, stockPhoto: `https://source.unsplash.com/featured/?${encodeURIComponent(res.photoSearchQuery || res.name)},food` };
       openConfirmModal(currentTempMeal, false);
     }
   } catch (e) { console.error(e); } finally { showLoading(false); }
@@ -352,7 +352,7 @@ async function handleAiWebSearch() {
   try {
     const res = await analyzeFood(currentSettings.geminiKey, q, 'text'); // Uses existing analyzeFood for web results
     if (res) {
-      currentTempMeal = { ...res, stockPhoto: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=300&q=80" };
+      currentTempMeal = { ...res, stockPhoto: `https://source.unsplash.com/featured/?${encodeURIComponent(res.photoSearchQuery || res.name)},food` };
       openConfirmModal(currentTempMeal, false);
       elements.searchModal.style.display = 'none';
     }
@@ -494,4 +494,5 @@ function toBase64(f) { return new Promise((s, r) => { const rdr = new FileReader
 function startVoiceRecognition() { const SR = window.SpeechRecognition || window.webkitSpeechRecognition; if (!SR) return alert("No support"); const r = new SR(); r.onresult = (e) => { elements.textLog.value = e.results[0][0].transcript; handleLog('text'); }; r.start(); }
 
 init();
+
 

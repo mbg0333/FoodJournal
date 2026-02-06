@@ -39,3 +39,4 @@ export const analyzeFood = async (key, input, type) => {
   return null;
 };
 
+
