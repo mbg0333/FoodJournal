@@ -95,19 +95,12 @@ function init() {
       if (elements.authScreen) elements.authScreen.style.display = 'none'; 
       if (elements.app) elements.app.style.display = 'block';
       await loadUserData();
-      refreshIcons();
     } else {
       currentUser = null; 
       if (elements.authScreen) elements.authScreen.style.display = 'flex'; 
       if (elements.app) elements.app.style.display = 'none';
     }
   });
-}
-
-function refreshIcons() {
-  if (window.lucide) {
-    window.lucide.createIcons();
-  }
 }
 
 function setupEventListeners() {
@@ -127,11 +120,17 @@ function setupEventListeners() {
   if (elements.voiceBtn) elements.voiceBtn.onclick = startVoiceRecognition;
   if (elements.photoBtn) elements.photoBtn.onclick = () => document.getElementById('photo-modal').style.display = 'flex';
   
+  const closePhotoModal = document.getElementById('close-photo-modal');
+  if (closePhotoModal) closePhotoModal.onclick = () => document.getElementById('photo-modal').style.display = 'none';
+  
   const takePhoto = document.getElementById('take-photo-btn');
   const choosePhoto = document.getElementById('choose-photo-btn');
   if (takePhoto) takePhoto.onclick = () => { document.getElementById('photo-modal').style.display = 'none'; document.getElementById('camera-input').click(); };
   if (choosePhoto) choosePhoto.onclick = () => { document.getElementById('photo-modal').style.display = 'none'; document.getElementById('file-input').click(); };
   
+  const cancelConfirm = document.getElementById('cancel-confirm');
+  if (cancelConfirm) cancelConfirm.onclick = () => elements.confirmModal.style.display = 'none';
+
   if (elements.openFavsLogBtn) {
     elements.openFavsLogBtn.onclick = (e) => {
       e.stopPropagation();
@@ -204,7 +203,7 @@ function setupEventListeners() {
     document.getElementById('settings-modal').style.display = 'none';
   };
 
-  if (elements.waterBtns) elements.navItems.forEach.call(elements.waterBtns, btn => {
+  if (elements.waterBtns) elements.waterBtns.forEach(btn => {
     btn.onclick = async (e) => {
       e.stopPropagation();
       const amt = parseInt(btn.getAttribute('data-amt'));
@@ -295,7 +294,6 @@ function openConfirmModal(m, edit) {
   elements.confirmImgPreview.style.backgroundImage = `url('${m.stockPhoto}')`;
   elements.deleteBtn.style.display = edit ? "flex" : "none";
   elements.confirmModal.style.display = 'flex';
-  refreshIcons();
 }
 
 async function handleSearch(q) {
@@ -325,7 +323,6 @@ async function loadUserData() {
 function switchTab(t) {
   Object.keys(elements.views).forEach(v => { if (elements.views[v]) elements.views[v].style.display = v === t ? 'block' : 'none'; });
   if (elements.navItems) elements.navItems.forEach(item => item.classList.toggle('active', item.getAttribute('data-tab') === t));
-  refreshIcons();
 }
 
 async function renderJournal() {
@@ -352,7 +349,7 @@ async function renderJournal() {
   if (elements.categorizedMeals) elements.categorizedMeals.innerHTML = Object.keys(grp).map(cat => `
     <div class="category-section glass ${categoriesExpanded[cat] ? '' : 'collapsed'}">
       <div class="category-header" onclick="window.toggleCat('${cat}')">
-        <h4><i data-lucide="chevron-down"></i> ${cat}</h4>
+        <h4><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="chevron"><path d="m6 9 6 6 6-6"/></svg> ${cat}</h4>
         <span>${grp[cat].length} items • ${grp[cat].reduce((s, m) => s+m.calories, 0)} kcal</span>
       </div>
       <div class="category-content">
@@ -365,7 +362,6 @@ async function renderJournal() {
         `).join('')}
       </div>
     </div>`).join('');
-  refreshIcons();
 }
 
 window.toggleCat = (c) => { categoriesExpanded[c] = !categoriesExpanded[c]; renderJournal(); };
@@ -382,9 +378,10 @@ async function renderFavorites() {
   if (elements.favoritesList) elements.favoritesList.innerHTML = currentFavorites.map(f => `
     <div class="fav-item glass" style="padding:15px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
       <div><strong>${f.name}</strong><br><small>${f.calories} kcal</small></div>
-      <div style="display:flex; gap:10px;"><button class="primary" onclick="window.logFav('${f.id}')">Add</button><button class="glass" onclick="window.deleteFav('${f.id}')"><i data-lucide="trash-2"></i></button></div>
+      <div style="display:flex; gap:10px;"><button class="primary" onclick="window.logFav('${f.id}')">Add</button><button class="glass" onclick="window.deleteFav('${f.id}')">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
+      </button></div>
     </div>`).join('') || "<p style='text-align:center; padding:20px;'>None</p>";
-  refreshIcons();
 }
 
 function renderFavsDropdown() { if (elements.favsDropdownList) elements.favsDropdownList.innerHTML = currentFavorites.map(f => `<div class="fav-drop-item" onclick="window.logFav('${f.id}')" style="padding:10px; cursor:pointer; border-bottom:1px solid rgba(255,255,255,0.05)">${f.name}</div>`).join('') || "<div style='padding:10px'>Empty</div>"; }
@@ -395,9 +392,10 @@ function renderCheckins() {
   elements.checkinHistoryList.innerHTML = checkinHistory.map(c => `
     <div class="checkin-item glass" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; margin-bottom: 10px;">
       <div><strong>${c.weight} lbs</strong><br><small>${new Date(c.date + "T12:00:00").toLocaleDateString()}</small></div>
-      <button class="icon-sm glass" style="color: #ef4444;" onclick="window.deleteCheckin('${c.id}')"><i data-lucide="trash-2"></i></button>
+      <button class="icon-sm glass" style="color: #ef4444;" onclick="window.deleteCheckin('${c.id}')">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
+      </button>
     </div>`).join('');
-  refreshIcons();
 }
 
 window.deleteCheckin = async (id) => { if (confirm("Delete?")) { showLoading(true); await storage.deleteCheckin(id); await loadUserData(); showLoading(false); } };
