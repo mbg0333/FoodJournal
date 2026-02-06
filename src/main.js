@@ -287,9 +287,16 @@ async function handleLog(type, data = null) {
     let input = type === 'text' ? elements.textLog.value : data;
     if (type === 'photo') input = await toBase64(data);
     const res = await analyzeFood(currentSettings.geminiKey, input, type);
-    if (res) {
-      currentTempMeal = { ...res, stockPhoto: `https://source.unsplash.com/featured/?${encodeURIComponent(res.photoSearchQuery || res.name)},food` };
-      openConfirmModal(currentTempMeal, false);
+        if (res) {
+      // If array, launch selection modal
+      if (Array.isArray(res) && res.length > 1) {
+        showSearchResultsModal(res);
+      } else {
+        // Single result fallback
+        const item = Array.isArray(res) ? res[0] : res;
+        currentTempMeal = { ...item, stockPhoto: \https://source.unsplash.com/featured/?\,food\ };
+        openConfirmModal(currentTempMeal, false);
+      }
     }
   } catch (e) { console.error(e); } finally { showLoading(false); }
 }
@@ -505,3 +512,35 @@ init();
 
 
 
+
+window.showSearchResultsModal = (results) => {
+  const modal = document.getElementById('search-modal');
+  const resultsContainer = document.getElementById('search-results');
+  resultsContainer.innerHTML = ''; // Clear previous
+  
+  results.forEach(r => {
+    const div = document.createElement('div');
+    div.className = 'search-item glass';
+    div.style.padding = '15px';
+    div.style.cursor = 'pointer';
+    div.innerHTML = \
+      <div style="font-weight:bold; color:var(--primary);">\</div>
+      <div style="font-size:0.85rem; color:var(--text-dim);">
+        \ kcal | P:\g C:\g F:\g
+      </div>
+    \;
+    div.onclick = () => {
+      currentTempMeal = { ...r, stockPhoto: \https://source.unsplash.com/featured/?\,food\ };
+      modal.style.display = 'none';
+      openConfirmModal(currentTempMeal, false);
+    };
+    resultsContainer.appendChild(div);
+  });
+  
+  // Hide tabs/prompts for this view
+  document.getElementById('search-tabs').style.display = 'none';
+  document.getElementById('ai-search-prompt').style.display = 'none';
+  document.getElementById('global-search-input').placeholder = "Select a match...";
+  
+  modal.style.display = 'flex';
+};
